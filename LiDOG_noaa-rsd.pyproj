@@ -5,7 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{11f1e240-cfb2-4a93-b84f-54f943086f0c}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>clip_dem1.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -19,7 +20,6 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="clip_dem1.py" />
     <Compile Include="LiDOG.py" />
   </ItemGroup>
   <ItemGroup>
