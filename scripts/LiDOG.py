@@ -1,11 +1,9 @@
-""" 
-LiDOG, the Lidar Deliverables for OCS Generator, processes 
-RSD and/or JALBTCX bathymetric lidar DEMs to generate a generaized
-product DEM and an associated M_QUAL shapefile.
+## This tool processes RSD DEM data and creates an M_QUAL polygon with appropriate attribution
+## Developed by Noel Dyer, PBC. Last Updated 12/6/2017
 
-Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
-nick.forfinski-sarkozi@noaa.gov
-"""
+## Modified by:
+# Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
+# nick.forfinski-sarkozi@noaa.gov
 
 
 import arcpy
@@ -74,14 +72,14 @@ class ProductDem:
         return agg_dem_water
 
     def generalize_water_coverage(self):
-        arcpy.AddMessage('generalizing and land-masking product DEM...')
+        arcpy.AddMessage('generalizing product DEM water coverage...')
         generalized_dem5 = Aggregate(Int(self.mask_land()), 4, 'MINIMUM', 'TRUNCATE', 'NODATA')
         return generalized_dem5
         
     def trim(self, mqual_path):
         arcpy.AddMessage('clipping original product DEM with M_QUAL...')
         arcpy.Clip_management(self.raster, '#', str(self.path).replace('.tif', '_M_QUAL.tif'), 
-                              str(mqual_path), clipping_geometry=True)
+                              str(mqual_path), nodata_value='0', clipping_geometry=True)
 
 
 class ProductCell:
@@ -115,13 +113,12 @@ class ProductCell:
         pass
 
     def create_mqual(self, generalized_coverage):
-        arcpy.AddMessage('converting generalized DEM to polygons...')
+        arcpy.AddMessage('generating M_QUAL from generalized water coverage...')
         dem_polys = 'in_memory\polys'
         arcpy.RasterToPolygon_conversion(generalized_coverage, dem_polys, 'NO_SIMPLIFY')
         polys_dissolved = 'in_memory\DissolvedFC'
         arcpy.Dissolve_management(dem_polys, polys_dissolved, multi_part='SINGLE_PART')
 
-        arcpy.AddMessage('denoising polygons...')
         self.mqual_name = '{}_M_QUAL.shp'.format(self.name)
         self.mqual_path = self.product_cell_path / self.mqual_name
 
@@ -138,7 +135,6 @@ class ProductCell:
                 if poly[1] > self.denoise_threshold:
                     insert_cursor.insertRow([poly[0]] + mqual_values)
         
-        arcpy.AddMessage('trimming pre_M_QUAL with cell geometry...')
         self.mqual_trimmed_path = Path(str(self.mqual_path) + '_TRIMMED.shp')
         arcpy.Clip_analysis('in_memory\pre_mqual', str(self.extent_fc_path), 
                             str(self.mqual_path))
@@ -180,7 +176,8 @@ class ProductCell:
         else:
             return buffer_fc_path
 
-    def mosaic(self, clipped_src_dems):
+    def mosaic(self):
+        clipped_src_dems = [str(c) for c in self.clipped_dem_dir.glob('*_{}.tif'.format(self.name))]
         inputs = ';'.join(clipped_src_dems)
         arcpy.AddMessage('mosaicking clipped source DEMs...'.format(self.name))
         mosaic_name = '{}_1m_DEM_MOSAIC.tif'.format(self.name)
@@ -195,18 +192,6 @@ class ProductCell:
         clipped_dem_path = self.clipped_dem_dir / clipped_dem_name
         arcpy.Clip_management(str(dem.raster), '#', str(clipped_dem_path), 
                               str(self.buffer_fc_path), clipping_geometry=True)
-
-    def create_product_src(self):
-        clipped_src_dems = [str(c) for c in self.clipped_dem_dir.glob('*_{}.tif'.format(self.name))]
-        if len(clipped_src_dems) > 1:
-            product_src_path = self.mosaic(clipped_src_dems)
-        elif len(clipped_src_dems) == 1:
-            arcpy.AddMessage('only 1 clipped src DEM in cell; copying it to product DEM source...')
-            product_src_name = '{}_5m_DEM_MOSAIC.tif'.format(self.name)
-            product_src_path = self.product_cell_path / product_src_name
-            arcpy.CopyRaster_management(clipped_src_dems[0], str(product_src_path))
-
-        return product_src_path
 
 
 class MetaData:
@@ -327,36 +312,42 @@ if __name__ == '__main__':
     for i, dem_path in enumerate(lidog.source_dems, 1):
         arcpy.AddMessage('{} (source DEM {} of {})'.format('*' * 40, i, lidog.num_dems))
 
+        # clip 1-m DEM to band 4 cells
         src_dem = SourceDem(dem_path, lidog)
         cells = src_dem.extract_band4_cells()
 
+        # loop through each cell intersecting dem1
         num_dem_cells = len(cells)
         for j, cell in enumerate(cells, 1):
             cell_name = cell[0]
             arcpy.AddMessage('{} (DEM cell {} of {})'.format('-' * 40, j, num_dem_cells))
             arcpy.AddMessage('processing band-4 product cell {}...'.format(cell_name))
 
+            # create product cell (if not already created)
             if cell_name not in lidog.product_cells.keys():
                 product_cell = ProductCell(cell, lidog, mqual)
                 lidog.product_cells.update({cell_name: product_cell})
 
+            # clip dem1 with cell buffer
             lidog.product_cells[cell_name].clip_src_dem(src_dem)
         
     num_cells = len(lidog.product_cells)
     for i, (cell_name, cell) in enumerate(lidog.product_cells.items(), 1):     
         arcpy.AddMessage('{} cell {} ({} of {})'.format('=' * 40, cell_name, i, num_cells))
-
-        product_src_path = cell.create_product_src()
-        agg_dem, agg_dem_path = src_dem.aggregate(product_src_path)
+        src_dem_mosaic_path = cell.mosaic()
+        agg_dem, agg_dem_path = src_dem.aggregate(src_dem_mosaic_path)
         prod_dem = ProductDem(agg_dem, agg_dem_path)
 
+        # create cell mqual
         cell_mqual = cell.create_mqual(prod_dem.generalize_water_coverage())
         mqual.mquals.append(cell_mqual)
         prod_dem.trim(cell_mqual)
 
+    # create project-wide M_QUAL
     arcpy.AddMessage('+' * 40)
     mqual.combine_mquals()
 
+    # update metadata with project-wide M_QUAL extents
     arcpy.AddMessage('exporting xml metatdata file...')
     metadata.get_xml_template()
     metadata.update_metadata()
