@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE metadata SYSTEM "http://www.fgdc.gov/metadata/fgdc-std-001-1998.dtd">
+
+<metadata>
+  <idinfo>
+    <citation>
+      <citeinfo>
+        <origin> National Oceanic and Atmospheric Administration (NOAA), National Geodetic Survey (NGS), Remote Sensing Division and U.S. Army Corps of Engineers (USACE) National  Coastal Mapping Program (NCMP)</origin>
+        <pubdate>20190719</pubdate>
+        <title>NOAA PR1401-TB-RSD-J-Band4 Topobathy LiDAR Processing</title>
+        <geoform>map</geoform>
+        <pubinfo>
+          <pubplace>Silver Spring, MD</pubplace>
+          <publish>NOAA, National Geodetic Survey (NGS)</publish>
+        </pubinfo>
+        <onlink>http://coast.noaa.gov/dataviewer</onlink>
+      </citeinfo>
+    </citation>
+    <descript>
+      <abstract>These data were collected and derived by the National Oceanic Atmospheric Administration, National Geodetic Survey Remote Sensing Division using a Riegl VQ880G system.  The data includes topobathy data in a GeoTiff (TIF) Digital Elevation Model (DEM)format.</abstract>
+      <purpose>This lidar data and derivatives are an ancillary product of NOAA's Coastal Mapping Program (CMP), created through a wider Integrated Ocean and Coastal Mapping initiative to increase support for multiple uses of the data. In addition, it will be used for ongoing research efforts for testing and developing standards for airborne lidar.</purpose>
+      <supplinf>MLLW DEM data includes utilization of ground (2), bathymetric point  (26),  submerged object (29), and International Hydrographic Organization (IHO) S-57 object (30) classification fields from LAS files. An automated ground classification algorithm was used to determine bare earth point classification.</supplinf>
+    </descript>
+    <timeperd>
+      <timeinfo>
+        <rngdates>
+          <begdate>20141106</begdate>
+          <enddate>20180721</enddate>
+        </rngdates>
+      </timeinfo>
+      <current>ground condition</current>
+    </timeperd>
+    <status>
+      <progress>Complete</progress>
+      <update>None planned</update>
+    </status>
+    <spdom>
+      <bounding>
+        <westbc>-67.300</westbc>
+        <eastbc>-65.500</eastbc>
+        <northbc>18.217</northbc>
+        <southbc>17.900</southbc>
+      </bounding>
+    </spdom>
+    <keywords>
+      <theme>
+        <themekt>None</themekt>
+        <themekey>Bathymetry/Topography</themekey>
+        <themekey>LiDAR</themekey>
+        <themekey>Topography</themekey>
+        <themekey>DEM</themekey>
+      </theme>
+      <theme>
+        <themekt>ISO 19115 Topic Category</themekt>
+        <themekey>Elevation</themekey>
+      </theme>
+      <place>
+        <placekt>None</placekt>
+        <placekey>United States</placekey>
+        <placekey>Puerto Rico</placekey>
+      </place>
+      <temporal>
+        <tempkt>None</tempkt>
+		<tempkey>20141106</tempkey>
+		<tempkey>20180721</tempkey>
+      </temporal>
+    </keywords>
+    <accconst>None</accconst>
+    <useconst>Users should be aware that temporal changes may have occurred since this data set was collected and some parts of this data may no longer represent actual surface conditions. This LIDAR data set is not intended for removal of features such as wrecks, rocks and obstructions.</useconst>
+    <ptcontac>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>National Oceanic and Atmospheric Administration (NOAA), National Geodetic Survey (NGS), Remote Sensing Division (RSD), Coastal Mapping Program (CMP)</cntorg>
+        </cntorgp>
+        <cntpos>Stephen White</cntpos>
+        <cntaddr>
+          <addrtype>mailing and physical address</addrtype>
+          <address>1315 East West Highway, N/NGS3</address>
+          <address>SSMC-3</address>
+          <city>Silver Spring</city>
+          <state>MD</state>
+          <postal>20910</postal>
+          <country>USA</country>
+        </cntaddr>
+        <cntvoice>(240)533-9588</cntvoice>
+      </cntinfo>
+    </ptcontac>
+    <datacred>We request that you credit the National Oceanic and Atmospheric Administration (NOAA) when you use these data in a report, publication, or presentation.</datacred>
+    <native>OS Independent</native>
+  </idinfo>
+  <dataqual>
+    <logic>Not applicable</logic>
+    <complete>Not applicable</complete>
+    <posacc>
+      <vertacc>
+			<vertaccr>The data positions were obtained using post processed KGPS methods. Data used to test the lidar was collected with Static GPS Observations and compared against the published data.  The vertical accuracy of the data is better than plus or minus 0.20 m.</vertaccr>
+			<qvertpa>
+				<vertaccv>0.20 m</vertaccv>
+				<vertacce> 1 Sigma</vertacce>
+			</qvertpa>
+      </vertacc>
+    </posacc>
+    <lineage>
+      <procstep>
+        <procdesc>Data were processed to an initial LAS format using the Riegl RiProcess software. The Applanix POSPac software was utilized for GPS and inertial processing, and GeoCue, Terrasolid, and LP360 software for data visualization, 3D editing, and export to final LAS file. Data were processed in NAD83 horizontal and vertical datum. VDatum was used to process to the MLLW datum.  Uncertainties in the vertical datum transformations equate to 8.96 centimeters.  QT Modeler was utilized to create the initial 1 meter DEM from an LAS 1.2 format file utilizing ground (2), bathymetric point  (26),  submerged object (29), and International Hydrographic Organization (IHO) S-57 object (30) classification fields for input. The values in the DEM were not rounded (no rounding rule was applied). 
+Horizontal Datum-NAD83 (2011) epoch: 2010
+Projection-UTM Zone 20N
+Horizontal Units-meters
+Vertical Datum- MLLW
+Vertical Units-meters  
+	</procdesc>
+        <procdate>20190719</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Data were processed to an initial LAS format using the Riegl RiProcess software. The Applanix POSPac software was utilized for GPS and inertial processing, and GeoCue, Terrasolid, and LP360 software for data visualization, 3D editing, and export to final LAS file. Data were processed in NAD83 horizontal and vertical datum. VDatum was used to process to the MLLW datum.  Uncertainties in the vertical datum transformations equate to 8.96 centimeters.  QT Modeler was utilized to create the initial 1 meter DEM from an LAS 1.2 format file utilizing ground (2), bathymetric point  (26),  submerged object (29), and International Hydrographic Organization (IHO) S-57 object (30) classification fields for input. The values in the DEM were not rounded (no rounding rule was applied).
+		</procdesc>
+        <procdate>20190719</procdate>
+      </procstep>
+    </lineage>
+  </dataqual>
+  <spdoinfo>
+    <direct>Raster</direct>
+  </spdoinfo>
+  <spref>
+    <horizsys>
+      <planar>
+        <gridsys>
+          <gridsysn>Universal Transverse Mercator</gridsysn>
+          <utm>
+            <utmzone>20</utmzone>
+            <transmer>
+              <sfctrmer>0.9996000</sfctrmer>
+              <longcm>-81.0000000</longcm>
+              <latprjo>0.000000</latprjo>
+              <feast>500000.000000</feast>
+              <fnorth>0.000000</fnorth>
+            </transmer>
+          </utm>
+        </gridsys>
+        <planci>
+          <plance>coordinate pair</plance>
+          <coordrep>
+            <absres>0.01</absres>
+            <ordres>0.01</ordres>
+          </coordrep>
+          <plandu>meters</plandu>
+        </planci>
+      </planar>
+      <geodetic>
+        <horizdn>North American Datum of 1983 (2011)</horizdn>
+        <ellips>GRS80</ellips>
+        <semiaxis>6378137</semiaxis>
+        <denflat>298.257222101</denflat>
+      </geodetic>
+    </horizsys>
+    <vertdef>
+      <altsys>
+        <altdatum>MLLW</altdatum>
+        <altres>0.01</altres>
+        <altunits>meters</altunits>
+        <altenc>Explicit elevation coordinate included with horizontal coordinates</altenc>
+      </altsys>
+    </vertdef>
+  </spref>
+  <distinfo>
+    <distrib>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>National Oceanic and Atmospheric Association (NOAA)</cntorg>
+          <cntper>NOAA Technical Point of Contact, Remote Sensing Division</cntper>
+        </cntorgp>
+        <cntpos>Stephen White</cntpos>
+        <cntaddr>
+          <addrtype>mailing and physical address</addrtype>
+          <address>1315 East West Highway, N/NGS3</address>
+          <address>SSMC-3</address>
+          <city>Silver Spring</city>
+          <state>MD</state>
+          <postal>20910</postal>
+          <country>USA</country>
+        </cntaddr>
+        <cntvoice>(240)533-9588</cntvoice>       
+        <cntemail>stephen.a.white@noaa.gov</cntemail>
+        <hours>Monday to Friday, 8 a.m. to 5 p.m., Eastern Standard Time</hours>
+      </cntinfo>
+    </distrib>
+    <resdesc>Downloadable Data</resdesc>
+    <distliab>Any conclusions drawn from the analysis of this information are not the responsibility of NOAA, the National Geodetic Survey.</distliab>
+    <stdorder>
+      <digform>
+        <digtinfo>
+          <formname>TIF</formname>
+        </digtinfo>
+        <digtopt>
+          <onlinopt>
+            <computer>
+              <networka>
+                <networkr>https://coast.noaa.gov/dataviewer/</networkr>
+              </networka>
+            </computer>
+          </onlinopt>
+        </digtopt>
+      </digform>
+      <fees>none</fees>
+    </stdorder>
+  </distinfo>
+  <metainfo>
+    <metd>20190719</metd>
+    <metrd>20190719</metrd>
+    <metc>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>National Oceanic and Atmospheric Administration (NOAA), National Ocean Service (NOS), National Geodetic Survey (NGS), Remote Sensing Division</cntorg>
+          <cntper>NOAA Technical Point of Contact, Remote Sensing Division</cntper>
+        </cntorgp>
+        <cntpos>Stephen White</cntpos>
+        <cntaddr>
+          <addrtype>mailing and physical address</addrtype>
+          <address>1315 East West Highway, N/NGS3</address>
+          <address>SSMC-3</address>
+          <city>Silver Spring</city>
+          <state>MD</state>
+          <postal>20910</postal>
+          <country>USA</country>
+        </cntaddr>
+        <cntvoice>(240)533-9588</cntvoice>
+      </cntinfo>
+    </metc>
+    <metstdn>FGDC Content Standards for Digital Geospatial Metadata</metstdn>
+    <metstdv>FGDC-STD-001-1998</metstdv>
+  </metainfo>
+</metadata>
+
