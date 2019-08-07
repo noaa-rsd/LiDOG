@@ -13,6 +13,9 @@ from arcpy.sa import *
 import os
 import collections
 from pathlib import Path
+import rasterio
+from rasterio.mask import mask
+from shapely.geometry import shape
 
 
 class SourceDem:
@@ -59,24 +62,27 @@ class SourceDem:
         return band4_cells
 
     def clip_rasterio(self):
-        import rasterio
-        from rasterio.mask import mask
-        from shapely.geometry import box
-        import geopandas as gpd
-        import pycrs
+        r = rasterio.open(self.path)
+        arcpy.FeaturesToJSON_conversion(b4_utm, geojson, geoJSON='GEOJSON', outputToWGS84='KEEP_INPUT_SR')
+        coords = [json.loads(geojson)['features'][0]['geometry']]
 
-        r = rasterio.open(r'X:\iocm_deliverables\ocs\VA1803-TB-C\dems\va1803_mllw_final_dem.tif')
-        geo = geo.to_crs(crs=r.crs.data)
-        coords = [json.loads(gdf.to_json())['features'][0]['geometry']]
-        out_img, out_transform = mask(raster=r, shapes=coords, crop=True)
+        project = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),
+            pyproj.Proj(init='epsg:26918'))
+
+        poly_utm = transform(project, coords[0])
+        poly_utm = shape(poly_utm)  # convert into shapely geometry
+        out_img, out_transform = mask(dataset=r, shapes=[poly_utm], all_touched=True, crop=True)
         out_meta = r.meta.copy()
         epsg_code = int(r.crs.data['init'][5:])
-        out_meta.update({"driver": "GTiff",
-                         "height": out_img.shape[1],
-                         "width": out_img.shape[2],
-                         "transform": out_transform,
-                         "crs": pycrs.parser.from_epsg_code(epsg_code).to_proj4()}
-                                 )
+        out_meta.update({'driver': 'GTiff',
+                         'height': out_img.shape[1],
+                         'width': out_img.shape[2],
+                         'transform': out_transform,
+                         'crs': r.crs.to_proj4(),
+                         'compress': 'lzw'})
+
         with rasterio.open(out_tif, "w", **out_meta) as dest:
             dest.write(out_img)
             
