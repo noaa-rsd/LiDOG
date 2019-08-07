@@ -11,11 +11,16 @@ import re
 import xml.etree.ElementTree as ET
 from arcpy.sa import *
 import os
+import json
 import collections
 from pathlib import Path
 import rasterio
 from rasterio.mask import mask
 from shapely.geometry import shape
+from shapely.ops import transform
+from functools import partial
+import pyproj
+import time
 
 
 class SourceDem:
@@ -60,32 +65,6 @@ class SourceDem:
             for cell in cells:
                 band4_cells.append(cell)
         return band4_cells
-
-    def clip_rasterio(self):
-        r = rasterio.open(self.path)
-        arcpy.FeaturesToJSON_conversion(b4_utm, geojson, geoJSON='GEOJSON', outputToWGS84='KEEP_INPUT_SR')
-        coords = [json.loads(geojson)['features'][0]['geometry']]
-
-        project = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),
-            pyproj.Proj(init='epsg:26918'))
-
-        poly_utm = transform(project, coords[0])
-        poly_utm = shape(poly_utm)  # convert into shapely geometry
-        out_img, out_transform = mask(dataset=r, shapes=[poly_utm], all_touched=True, crop=True)
-        out_meta = r.meta.copy()
-        epsg_code = int(r.crs.data['init'][5:])
-        out_meta.update({'driver': 'GTiff',
-                         'height': out_img.shape[1],
-                         'width': out_img.shape[2],
-                         'transform': out_transform,
-                         'crs': r.crs.to_proj4(),
-                         'compress': 'lzw'})
-
-        with rasterio.open(out_tif, "w", **out_meta) as dest:
-            dest.write(out_img)
-            
 
 
 class ProductDem:
@@ -215,12 +194,45 @@ class ProductCell:
                                            mosaic_method='MINIMUM')
         return self.product_cell_path / mosaic_name
 
-    def clip_src_dem(self, dem):
+    def clip_src_dem_DEPRACATE(self, dem):
         arcpy.AddMessage('clipping {} with {} cell buffer...'.format(dem.name, self.name))
         clipped_dem_name = dem.name.replace('.tif', '_{}.tif'.format(self.name))
         clipped_dem_path = self.clipped_dem_dir / clipped_dem_name
         arcpy.Clip_management(str(dem.raster), '#', str(clipped_dem_path), 
                               str(self.buffer_fc_path), clipping_geometry=True)
+
+    def clip_src_dem(self, dem):
+        arcpy.AddMessage('clipping {} with {} cell buffer...'.format(dem.name, self.name))
+        r = rasterio.open(dem.path)
+        r_epsg = r.crs.to_epsg()
+
+        geojson_path = str(self.extent_fc_path).replace('.shp', '.geojson')
+        arcpy.FeaturesToJSON_conversion(self.buffer_fc_path, geojson_path, geoJSON='GEOJSON')
+
+        with open(geojson_path, 'r') as j:
+            cell_poly = json.load(j)['features'][0]['geometry']
+
+        project = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),
+            pyproj.Proj(init='epsg:{}'.format(r_epsg)))
+
+        cell_geom = shape(cell_poly)  # convert into shapely geometry
+        cell_utm = transform(project, cell_geom)
+        out_img, out_transform = mask(dataset=r, shapes=[cell_utm], crop=True)
+
+        out_meta = r.meta.copy()
+        out_meta.update({'driver': 'GTiff',
+                         'height': out_img.shape[1],
+                         'width': out_img.shape[2],
+                         'transform': out_transform,
+                         'crs': r.crs.to_proj4(),
+                         'compress': 'lzw'})
+
+        clipped_dem_name = dem.name.replace('.tif', '_{}.tif'.format(self.name))
+        clipped_dem_path = self.clipped_dem_dir / clipped_dem_name
+        with rasterio.open(clipped_dem_path, "w", **out_meta) as clipped_src_dem:
+            clipped_src_dem.write(out_img)
 
 
 class MetaData:
@@ -327,6 +339,17 @@ class LiDOG:
 
 
 if __name__ == '__main__':
+
+    user_dir = os.path.expanduser('~')
+
+    #script_path = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 'anaconda3', 'Scripts')
+    #gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 'anaconda3', 'envs', 'LiDOG', 'Library', 'share', 'gdal')
+    proj_lib =Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 'anaconda3', 'envs', 'LiDOG', 'Library', 'share')
+
+    #if script_path.name not in os.environ["PATH"]:
+    #    os.environ["PATH"] += os.pathsep + str(script_path)
+    #os.environ["GDAL_DATA"] = str(gdal_data)
+    os.environ["PROJ_LIB"] = str(proj_lib)
 
     lidog = LiDOG()
     
