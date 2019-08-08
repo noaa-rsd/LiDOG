@@ -20,6 +20,11 @@ from shapely.geometry import shape
 from shapely.ops import transform
 from functools import partial
 import pyproj
+from rasterio.io import MemoryFile 
+from rasterio import features
+from rasterio.enums import Resampling
+from rasterio import Affine
+import numpy as np
 import time
 
 
@@ -38,18 +43,40 @@ class SourceDem:
     def aggregate(self, mosaic_path):
         src_res = '1m'
         prod_res = '5m' 
-        arcpy.AddMessage('Aggregating mosaicked source DEM to product DEM...')
+        arcpy.AddMessage('Aggregating mosaicked source DEM to product-DEM resolution...')
         agg_dem = Aggregate(str(mosaic_path), self.agg_factor, 'MINIMUM', 'TRUNCATE', 'NODATA')
         agg_dem_path = Path(str(mosaic_path).replace(src_res, prod_res))
         #agg_dem.save(str(agg_dem_path))
         return agg_dem, agg_dem_path
 
-    def get_coverage_fc(self):
+    def get_coverage_fc_DEPRECATE(self):
         arcpy.AddMessage('determing band-4 coverage of {}'.format(self.path))
         src_dem_coverage_fc = 'in_memory\src_dem_coverage'
         r = Aggregate(self.raster, 10, extent_handling='TRUNCATE')
         arcpy.RasterToPolygon_conversion(Int(r * 0), src_dem_coverage_fc, simplify='NO_SIMPLIFY')
         return src_dem_coverage_fc
+
+    def get_coverage_fc(self):
+        arcpy.AddMessage('determining coverage of DEM...')
+        with rasterio.open(self.path) as r:
+            t=r.meta['transform']
+            data = r.read_masks(1, out_shape=(r.height // 10, r.width // 10), resampling=Resampling.average)
+
+        transform = Affine(t.a * 10, t.b, t.c, t.d, t.e * 10, t.f)
+        data = np.ma.array(data, mask=(data == 0))
+        mask = features.shapes(data, mask=None, transform=transform)
+
+        coverage_shp = 'in_memory\cov'
+        sr = arcpy.SpatialReference(r.crs.to_epsg())
+        arcpy.CreateFeatureclass_management('in_memory', 'cov', spatial_reference=sr)
+        cursor = arcpy.da.InsertCursor(coverage_shp, ['SHAPE@WKT'])
+
+        for poly, value in mask:
+            poly_wkt = shape(poly).wkt
+            cursor.insertRow([poly_wkt])
+        del cursor
+        return coverage_shp
+
 
     def extract_band4_cells(self):
         arcpy.MakeFeatureLayer_management(str(ProductCell.band4_shp), 'band4')
@@ -69,7 +96,9 @@ class SourceDem:
 
 class ProductDem:
 
-    def __init__(self, agg_raster, agg_path):
+    def __init__(self, agg_raster, agg_path, cell):
+        self.product_cell_name = cell.name
+        self.product_cell_path = cell.product_cell_path
         self.path = agg_path
         self.raster = agg_raster
         self.max_depth = -20
@@ -80,13 +109,14 @@ class ProductDem:
         return agg_dem_water
 
     def generalize_water_coverage(self):
-        arcpy.AddMessage('generalizing product DEM water coverage...')
+        arcpy.AddMessage('generalizing preliminary product DEM water coverage...')
         generalized_dem5 = Aggregate(Int(self.mask_land()), 4, 'MINIMUM', 'TRUNCATE', 'NODATA')
         return generalized_dem5
         
     def trim(self, mqual_path):
-        arcpy.AddMessage('clipping original product DEM with M_QUAL...')
-        arcpy.Clip_management(self.raster, '#', str(self.path).replace('.tif', '_M_QUAL.tif'), 
+        arcpy.AddMessage('clipping preliminary product DEM with M_QUAL...')
+        product_dem_path = self.product_cell_path / (self.product_cell_name + '_5m_DEM_M_QUAL.tif')
+        arcpy.Clip_management(self.raster, '#', str(product_dem_path), 
                               str(mqual_path), nodata_value='0', clipping_geometry=True)
 
 
@@ -188,18 +218,11 @@ class ProductCell:
         clipped_src_dems = [str(c) for c in self.clipped_dem_dir.glob('*_{}.tif'.format(self.name))]
         inputs = ';'.join(clipped_src_dems)
         arcpy.AddMessage('mosaicking clipped source DEMs...'.format(self.name))
-        mosaic_name = '{}_1m_DEM_MOSAIC.tif'.format(self.name)
-        arcpy.MosaicToNewRaster_management(inputs, str(self.product_cell_path), mosaic_name, 
+        mosaic_name = '{}_src'.format(self.name)
+        arcpy.MosaicToNewRaster_management(inputs, 'in_memory', mosaic_name, 
                                            pixel_type='32_BIT_FLOAT', number_of_bands=1,
                                            mosaic_method='MINIMUM')
-        return self.product_cell_path / mosaic_name
-
-    def clip_src_dem_DEPRACATE(self, dem):
-        arcpy.AddMessage('clipping {} with {} cell buffer...'.format(dem.name, self.name))
-        clipped_dem_name = dem.name.replace('.tif', '_{}.tif'.format(self.name))
-        clipped_dem_path = self.clipped_dem_dir / clipped_dem_name
-        arcpy.Clip_management(str(dem.raster), '#', str(clipped_dem_path), 
-                              str(self.buffer_fc_path), clipping_geometry=True)
+        return 'in_memory\{}'.format(mosaic_name)
 
     def clip_src_dem(self, dem):
         arcpy.AddMessage('clipping {} with {} cell buffer...'.format(dem.name, self.name))
@@ -388,7 +411,7 @@ if __name__ == '__main__':
         arcpy.AddMessage('{} cell {} ({} of {})'.format('=' * 40, cell_name, i, num_cells))
         src_dem_mosaic_path = cell.mosaic()
         agg_dem, agg_dem_path = src_dem.aggregate(src_dem_mosaic_path)
-        prod_dem = ProductDem(agg_dem, agg_dem_path)
+        prod_dem = ProductDem(agg_dem, agg_dem_path, cell)
 
         # create cell mqual
         cell_mqual = cell.create_mqual(prod_dem.generalize_water_coverage())
