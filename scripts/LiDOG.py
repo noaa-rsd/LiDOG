@@ -283,6 +283,7 @@ class MetaData:
         self.surend = lidog.surend
         self.data_src = lidog.data_src
         self.meta_library = self.get_meta_library()
+        self.bounding_coordinates = None
 
         self.metadata = {
             'begdate': self.format_date(self.sursta),
@@ -290,8 +291,20 @@ class MetaData:
             'proj_id': lidog.project_id,  # TODO: add to title tag 
             'longcm': self.central_meridian,
             'utmzone': self.utm_zone,
-            'procdesc': self.meta_library['procdesc'][self.data_src]
+            'procdesc': self.meta_library['procdesc'][self.data_src],
+            'westbc': None,
+            'eastbc': None,
+            'northbc': None,
+            'southbc': None,
             }
+
+    def popuate_extents(self, mqual_path):
+        mqual_extents = arcpy.Describe(str(mqual_path)).extent
+        mqual_extents_DD = mqual_extents.projectAs(arcpy.SpatialReference(4326))
+        self.metadata['westbc'] = mqual_extents_DD.XMin
+        self.metadata['eastbc'] = mqual_extents_DD.XMax
+        self.metadata['northbc'] = mqual_extents_DD.YMin
+        self.metadata['southbc'] = mqual_extents_DD.YMax
 
     def get_meta_library(self):
         lidog_dir = os.path.dirname(os.path.realpath(__file__))
@@ -313,7 +326,8 @@ class MetaData:
         tree = ET.parse(self.template_path)
         self.xml_root = tree.getroot()
         
-    def update_metadata(self):
+    def update_metadata(self, mqual_path):
+        self.popuate_extents(mqual_path)
         for metadatum, val in self.metadata.items():
             for e in self.xml_root.iter(metadatum):
                 e.text = str(val)
@@ -357,7 +371,9 @@ class Mqual:
         if len(self.mquals) > 1:
             temp_mqual = r'in_memory\temp_mqual_shp'
             current_mqual = r'in_memory\current_mqual'
-            arcpy.Union_analysis([str(self.mquals[0]), str(self.mquals[1])], current_mqual)
+            arcpy.Union_analysis([str(self.mquals[0]), 
+                                  str(self.mquals[1])], 
+                                 current_mqual)
 
             for i in range(2, len(self.mquals)):
                 arcpy.Union_analysis([current_mqual, str(self.mquals[i])], temp_mqual)
@@ -368,6 +384,8 @@ class Mqual:
             arcpy.FeatureClassToFeatureClass_conversion(str(self.mquals[0]), 
                                                         str(self.proj_dir), 
                                                         self.project_mqual_name)
+
+        return self.project_mqual_path
 
 
 class LiDOG:
@@ -397,15 +415,16 @@ class LiDOG:
                                  current_band4)
 
             for i in range(2, len(self.src_dem_band4_cells)):
-                arcpy.Union_analysis([current_band4, str(self.src_dem_band4_cells[i])], 
-                                     temp_band4)
+                arcpy.Union_analysis([current_band4, str(self.src_dem_band4_cells[i])], temp_band4)
                 arcpy.CopyFeatures_management(temp_band4, current_band4)
-            arcpy.Copy_management(current_band4, str(project_band4_cells_path))
+            arcpy.CopyFeatures_management(current_band4, str(project_band4_cells_path))
 
         else:
             arcpy.FeatureClassToFeatureClass_conversion(str(self.src_dem_band4_cells[0]), 
                                                         str(self.out_dir), 
                                                         project_band4_cells_path.name)
+
+        return 
 
 
 if __name__ == '__main__':
@@ -423,6 +442,7 @@ if __name__ == '__main__':
     os.environ["PROJ_LIB"] = str(proj_lib)
 
     lidog = LiDOG()
+    metadata = MetaData(lidog)
     mqual = Mqual(lidog, metadata)
 
     arcpy.CheckOutExtension('Spatial')
@@ -467,14 +487,13 @@ if __name__ == '__main__':
 
     # create project-wide M_QUAL
     arcpy.AddMessage('+' * 40)
-    mqual.combine_mquals()
+    project_mqual = mqual.combine_mquals()
 
     arcpy.AddMessage('merging source DEM Band4 cell shapefiles...')
     lidog.merge_dem_band4_coverages()
 
     # update metadata with project-wide M_QUAL extents
-    metadata = MetaData(lidog)
     arcpy.AddMessage('exporting xml metatdata file...')
     metadata.get_xml_template()
-    metadata.update_metadata()
+    metadata.update_metadata(project_mqual)
     metadata.export_metadata()
