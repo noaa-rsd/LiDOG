@@ -1,0 +1,7 @@
+mask\_feature module
+====================
+
+.. automodule:: mask_feature
+   :members:
+   :undoc-members:
+   :show-inheritance:

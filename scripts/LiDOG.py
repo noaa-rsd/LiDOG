@@ -69,14 +69,26 @@ class SourceDem:
         del cursor
         return coverage_shp
 
-
     def extract_band4_cells(self):
+
+        self.band4_cells_dir = self.proj_dir / 'Source_DEM_Band4_Cells' / self.basename
+        try:
+            os.mkdir(str(self.band4_cells_dir))
+        except Exception as e:
+            pass
+
         arcpy.MakeFeatureLayer_management(str(ProductCell.band4_shp), 'band4')
         extent_poly = self.get_coverage_fc()
         arcpy.SelectLayerByLocation_management('band4', 'INTERSECT', extent_poly)
         num_cells = int(arcpy.GetCount_management('band4').getOutput(0))
         arcpy.AddMessage('{} coverage intersects {} band-4 cells'.format(self.name, num_cells))
-        self.band4_cells = self.proj_dir / (self.basename + '_BAND4_cells.shp')
+
+        self.band4_cells = self.band4_cells_dir / (self.basename + '_BAND4_cells.shp')
+        try:
+            os.mkdir(self.band4_cells_dir)
+        except Exception as e:
+            pass
+
         arcpy.CopyFeatures_management('band4', str(self.band4_cells))
         
         band4_cells = []
@@ -402,8 +414,27 @@ class LiDOG:
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
+        self.src_dem_band4_shp_dir = self.out_dir / 'Source_DEM_Band4_Cells'
 
-    def merge_dem_band4_coverages(self):
+        try:
+            os.mkdir(str(self.src_dem_band4_shp_dir))
+        except Exception as e:
+            pass
+
+    def create_project_band4_cells_shp(self):
+        project_band4_cells_name = self.project_id + '_Band4_Cells.shp'
+        project_band4_cells_path = self.src_dem_band4_shp_dir / project_band4_cells_name
+        proj_band4_shp_temp = r'in_memory\band4'
+        arcpy.CreateFeatureclass_management('in_memory', 'band4', 'POLYGON',
+                                            str(ProductCell.band4_shp),
+                                            spatial_reference=self.spatial_ref)
+        band4_cells = arcpy.da.InsertCursor(proj_band4_shp_temp, ['CellName', 'SHAPE@'])
+        for cell in self.product_cells.values(): 
+            band4_cells.insertRow([cell.name, cell.geom])
+        del band4_cells
+        arcpy.CopyFeatures_management(proj_band4_shp_temp, str(project_band4_cells_path))
+
+    def merge_dem_band4_coverages_DEPRACATE(self):
         project_band4_cells_name = self.project_id + '_Band4_Cells.shp'
         project_band4_cells_path = self.out_dir / project_band4_cells_name
 
@@ -423,7 +454,6 @@ class LiDOG:
             arcpy.FeatureClassToFeatureClass_conversion(str(self.src_dem_band4_cells[0]), 
                                                         str(self.out_dir), 
                                                         project_band4_cells_path.name)
-
         return 
 
 
@@ -447,6 +477,7 @@ if __name__ == '__main__':
 
     arcpy.CheckOutExtension('Spatial')
     arcpy.env.workspace = str(lidog.out_dir)
+    arcpy.env.overwriteOutput = True
 
     for i, dem_path in enumerate(lidog.source_dems, 1):
         arcpy.AddMessage('{} (source DEM {} of {})'.format('*' * 60, i, lidog.num_dems))
@@ -454,7 +485,7 @@ if __name__ == '__main__':
         # clip 1-m DEM to band 4 cells
         src_dem = SourceDem(dem_path, lidog)
         cells, cells_shp = src_dem.extract_band4_cells()
-        lidog.src_dem_band4_cells.append(cells_shp)
+        #lidog.src_dem_band4_cells.append(cells_shp)
 
         # loop through each cell intersecting dem1
         num_dem_cells = len(cells)
@@ -489,8 +520,9 @@ if __name__ == '__main__':
     arcpy.AddMessage('+' * 40)
     project_mqual = mqual.combine_mquals()
 
-    arcpy.AddMessage('merging source DEM Band4 cell shapefiles...')
-    lidog.merge_dem_band4_coverages()
+    # create project-wide band4 cells shp
+    arcpy.AddMessage('creating project-wide band4 cells shp...')
+    lidog.create_project_band4_cells_shp()
 
     # update metadata with project-wide M_QUAL extents
     arcpy.AddMessage('exporting xml metatdata file...')
