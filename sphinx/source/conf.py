@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../scripts'))
+sys.path.insert(0, os.path.abspath('../../scripts'))
 
 
 # -- Project information -----------------------------------------------------
@@ -22,7 +22,7 @@ copyright = '2019, NOAA Remote Sensing Division'
 author = 'NOAA Remote Sensing Division'
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.1-beta-rc1'
+release = 'v1.0-beta'
 
 
 # -- General configuration ---------------------------------------------------
@@ -102,7 +102,7 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static', 'assets']
+html_static_path = ['../_static', '../assets']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
