@@ -1,20 +1,30 @@
-.. LiDOG documentation master file, created by
-   sphinx-quickstart on Mon Aug 12 14:27:42 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Lidar Deliverables for OCS Generator (LiDOG)
+============================================
+  
+LiDOG is an ArcPro Python script tool that generates project-wide and band-4 cell charting deliverables from source bathymetric lidar digital elevation models (DEMs).  Source DEMs typically have 1-m resolution, but some source DEMs have coarser resolution.
 
-Welcome to LiDOG's documentation!
-=================================
+Project-wide Deliverables
+#########################
+
+- M_QUAL shapefile
+- xml metadata file
+
+Band-4 Cell Deliverables
+########################
+
+- M_QUAL shapefile
+- 5-m Digital Elevation Model (DEM)
+
+-------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
-
-Indices and tables
-==================
+    :maxdepth: 1
+    
+    Gui
+    Workflow
+    Deliverables
+    
+**Source Code**
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

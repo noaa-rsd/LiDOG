@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Lidar Deliverables for OCS Generator (LiDOG) &mdash; LiDOG v1.0-beta documentation</title>
+  <title>Workflow &mdash; LiDOG v1.0-beta documentation</title>
   
 
   
@@ -35,7 +35,8 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="GUI" href="Gui.html" /> 
+    <link rel="next" title="Deliverables" href="Deliverables.html" />
+    <link rel="prev" title="GUI" href="Gui.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -49,7 +50,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> LiDOG
+            <a href="index.html" class="icon icon-home"> LiDOG
           
 
           
@@ -79,9 +80,9 @@
               
             
             
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Gui.html">GUI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Workflow.html">Workflow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Deliverables.html">Deliverables</a></li>
 </ul>
 
@@ -97,7 +98,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">LiDOG</a>
+          <a href="index.html">LiDOG</a>
         
       </nav>
 
@@ -126,15 +127,15 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#">Docs</a> &raquo;</li>
+      <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Lidar Deliverables for OCS Generator (LiDOG)</li>
+      <li>Workflow</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/Workflow.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -147,36 +148,19 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="lidar-deliverables-for-ocs-generator-lidog">
-<h1>Lidar Deliverables for OCS Generator (LiDOG)<a class="headerlink" href="#lidar-deliverables-for-ocs-generator-lidog" title="Permalink to this headline">¶</a></h1>
-<p>LiDOG is an ArcPro Python script tool that generates project-wide and band-4 cell charting deliverables from source bathymetric lidar digital elevation models (DEMs).  Source DEMs typically have 1-m resolution, but some source DEMs have coarser resolution.</p>
-<div class="section" id="project-wide-deliverables">
-<h2>Project-wide Deliverables<a class="headerlink" href="#project-wide-deliverables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>M_QUAL shapefile</p></li>
-<li><p>xml metadata file</p></li>
-</ul>
-</div>
-<div class="section" id="band-4-cell-deliverables">
-<h2>Band-4 Cell Deliverables<a class="headerlink" href="#band-4-cell-deliverables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>M_QUAL shapefile</p></li>
-<li><p>5-m Digital Elevation Model (DEM)</p></li>
-</ul>
-<hr class="docutils" />
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Gui.html">GUI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Workflow.html">Workflow</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Deliverables.html">Deliverables</a></li>
-</ul>
-</div>
-<p><strong>Source Code</strong></p>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-</ul>
-</div>
+  <div class="section" id="workflow">
+<h1>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h1>
+<p>Outlined in the figure below, the product cell workflow consists of ## main steps:</p>
+<p>For each product cell:</p>
+<ol class="arabic simple">
+<li><p>clip each source DEM with cell geometry</p></li>
+<li><p>merge clipped source DEMS to create cell source DEM</p></li>
+<li><p>generalize cell source DEM to product resolution (typically 5-m)</p></li>
+<li><p>extract water-only DEM from generalized DEM</p></li>
+<li><p>generate M_QUAL from denoised water-only DEM</p></li>
+<li><p>clip original generalized DEM with M_QUAL</p></li>
+</ol>
+<img alt="_images/LiDOG_Workflow.png" src="_images/LiDOG_Workflow.png" />
 </div>
 
 
@@ -187,8 +171,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="Gui.html" class="btn btn-neutral float-right" title="GUI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="Deliverables.html" class="btn btn-neutral float-right" title="Deliverables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
+      
+        <a href="Gui.html" class="btn btn-neutral float-left" title="GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

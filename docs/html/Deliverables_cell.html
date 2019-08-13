@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Lidar Deliverables for OCS Generator (LiDOG) &mdash; LiDOG v1.0-beta documentation</title>
+  <title>Band-4 Cell Deliverables &mdash; LiDOG v1.0-beta documentation</title>
   
 
   
@@ -35,7 +35,8 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="GUI" href="Gui.html" /> 
+    <link rel="next" title="Project-wide Deliverables" href="Deliverables_project.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="Deliverables.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -49,7 +50,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> LiDOG
+            <a href="index.html" class="icon icon-home"> LiDOG
           
 
           
@@ -79,10 +80,11 @@
               
             
             
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Gui.html">GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Workflow.html">Workflow</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Deliverables.html">Deliverables</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Band-4 Cell Deliverables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Deliverables_project.html">Project-wide Deliverables</a></li>
 </ul>
 
             
@@ -97,7 +99,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">LiDOG</a>
+          <a href="index.html">LiDOG</a>
         
       </nav>
 
@@ -126,15 +128,17 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#">Docs</a> &raquo;</li>
+      <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Lidar Deliverables for OCS Generator (LiDOG)</li>
+          <li><a href="Deliverables.html">&lt;no title&gt;</a> &raquo;</li>
+        
+      <li>Band-4 Cell Deliverables</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/Deliverables_cell.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -147,36 +151,29 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="lidar-deliverables-for-ocs-generator-lidog">
-<h1>Lidar Deliverables for OCS Generator (LiDOG)<a class="headerlink" href="#lidar-deliverables-for-ocs-generator-lidog" title="Permalink to this headline">¶</a></h1>
-<p>LiDOG is an ArcPro Python script tool that generates project-wide and band-4 cell charting deliverables from source bathymetric lidar digital elevation models (DEMs).  Source DEMs typically have 1-m resolution, but some source DEMs have coarser resolution.</p>
-<div class="section" id="project-wide-deliverables">
-<h2>Project-wide Deliverables<a class="headerlink" href="#project-wide-deliverables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>M_QUAL shapefile</p></li>
-<li><p>xml metadata file</p></li>
-</ul>
-</div>
-<div class="section" id="band-4-cell-deliverables">
-<h2>Band-4 Cell Deliverables<a class="headerlink" href="#band-4-cell-deliverables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>M_QUAL shapefile</p></li>
-<li><p>5-m Digital Elevation Model (DEM)</p></li>
-</ul>
-<hr class="docutils" />
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Gui.html">GUI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Workflow.html">Workflow</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Deliverables.html">Deliverables</a></li>
-</ul>
-</div>
-<p><strong>Source Code</strong></p>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-</ul>
-</div>
+  <div class="section" id="band-4-cell-deliverables">
+<h1>Band-4 Cell Deliverables<a class="headerlink" href="#band-4-cell-deliverables" title="Permalink to this headline">¶</a></h1>
+<p>LiDOG generates the following deliverables for each Marine Chart Division (MCD) band-4 cell covered by the source DEM(s) (which typically have 1-m resolution):</p>
+<table class="colwidths-given docutils align-default" id="id1">
+<caption><span class="caption-text">Product Cell Deliverables</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Deliverable</p></th>
+<th class="head"><p>Comment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>M_QUAL Polygon</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5-m resolution water-only DEM</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
@@ -187,8 +184,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="Gui.html" class="btn btn-neutral float-right" title="GUI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="Deliverables_project.html" class="btn btn-neutral float-right" title="Project-wide Deliverables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
+      
+        <a href="Deliverables.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

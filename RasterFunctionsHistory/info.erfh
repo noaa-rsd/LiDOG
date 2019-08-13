@@ -1,0 +1,26 @@
+{
+  "version" : 1,
+  "name" : "Raster Functions History",
+  "historyItems" : [
+    {
+      "id" : "{810569E1-C80E-4893-98E1-ED20CA606A53}",
+      "type" : 1,
+      "status" : 2,
+      "name" : "Hillshade",
+      "description" : "Creates a 3D representation of the surface, with the sun's relative position taken into account for shading the image.",
+      "rftPath" : "Hillshade_{810569E1-C80E-4893-98E1-ED20CA606A53}.rft.xml",
+      "startTime" : "637013075180000000",
+      "endTime" : "637013075180000000"
+    },
+    {
+      "id" : "{7ECE087C-4210-4818-A1A0-357432A0B980}",
+      "type" : 1,
+      "status" : 2,
+      "name" : "Hillshade",
+      "description" : "Creates a 3D representation of the surface, with the sun's relative position taken into account for shading the image.",
+      "rftPath" : "Hillshade_{7ECE087C-4210-4818-A1A0-357432A0B980}.rft.xml",
+      "startTime" : "637013078540000000",
+      "endTime" : "637013078540000000"
+    }
+  ]
+}
