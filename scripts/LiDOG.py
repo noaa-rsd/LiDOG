@@ -122,6 +122,7 @@ class ProductDem:
 class ProductCell:
 
     band4_shp = Path('../support_files/All_Band4_V5.shp')
+    src_dems_template_shp = Path(r'../support_files/src_dem_extent_shp_template.shp')
     fields = ['SHAPE@', 'CellName']
 
     def __init__(self, cell, lidog, mqual):
@@ -224,7 +225,10 @@ class ProductCell:
                                            pixel_type='32_BIT_FLOAT', number_of_bands=1, 
                                            mosaic_method='MINIMUM')
 
-        return 'in_memory\{}'.format(mosaic_name)
+        mosaic_path = 'in_memory\{}'.format(mosaic_name)
+        mosaic_resolution = arcpy.Describe(mosaic_path).meancellwidth
+
+        return mosaic_path, mosaic_resolution
 
     def get_cell_geometry(self):
         geojson_path = str(self.extent_fc_path).replace('.shp', '.geojson')
@@ -414,7 +418,7 @@ class LiDOG:
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
-        self.src_dem_band4_shp_dir = self.out_dir / 'Source_DEM_Band4_Cells'
+        self.src_dem_band4_shp_dir = self.out_dir
 
         try:
             os.mkdir(str(self.src_dem_band4_shp_dir))
@@ -433,6 +437,21 @@ class LiDOG:
             band4_cells.insertRow([cell.name, cell.geom])
         del band4_cells
         arcpy.CopyFeatures_management(proj_band4_shp_temp, str(project_band4_cells_path))
+
+    def create_source_dems_extents(self):
+        src_dems_extent_name = self.project_id + '_Source_Dem_Extents.shp'
+        src_dems_extent_name_path = self.out_dir / src_dems_extent_name
+        src_dems_extent_name_temp = r'in_memory\extents'
+        arcpy.CreateFeatureclass_management('in_memory', 'extents', 'POLYGON',
+                                            str(ProductCell.src_dems_template_shp),
+                                            spatial_reference=self.spatial_ref)
+        src_dem_extents = arcpy.da.InsertCursor(proj_band4_shp_temp, ['name', 'resolution', 'SHAPE@'])
+        for dem in self.source_dems: 
+            desc = arcpy.Describe(str(dem))
+            dem_res = desc.meancellwidth
+            src_dem_extents.insertRow([dem.name, dem_res, desc.extent.polygon])
+        del src_dem_extents
+        arcpy.CopyFeatures_management(src_dems_extent_name_temp, str(src_dems_extent_name_path))       
 
     def merge_dem_band4_coverages_DEPRACATE(self):
         project_band4_cells_name = self.project_id + '_Band4_Cells.shp'
@@ -457,19 +476,29 @@ class LiDOG:
         return 
 
 
-if __name__ == '__main__':
-
+def set_env_vars():
     user_dir = os.path.expanduser('~')
 
-    #script_path = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 'anaconda3', 'Scripts')
-    #gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 'anaconda3', 'envs', 'LiDOG', 'Library', 'share', 'gdal')
-    proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 'anaconda3', 
-                                      'envs', 'LiDOG', 'Library', 'share')
+    script_path = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
+                                          'anaconda3', 'Scripts')
 
-    #if script_path.name not in os.environ["PATH"]:
-    #    os.environ["PATH"] += os.pathsep + str(script_path)
-    #os.environ["GDAL_DATA"] = str(gdal_data)
+    gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
+                                        'anaconda3', 'envs', 'LiDOG', 
+                                        'Library', 'share', 'gdal')
+
+    proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
+                                       'anaconda3', 'envs', 'LiDOG', 
+                                       'Library', 'share')
+
+    if script_path.name not in os.environ["PATH"]:
+        os.environ["PATH"] += os.pathsep + str(script_path)
+
+    os.environ["GDAL_DATA"] = str(gdal_data)
     os.environ["PROJ_LIB"] = str(proj_lib)
+
+
+if __name__ == '__main__':
+    set_env_vars()
 
     lidog = LiDOG()
     metadata = MetaData(lidog)
@@ -505,9 +534,14 @@ if __name__ == '__main__':
     num_cells = len(lidog.product_cells)
     for i, (cell_name, cell) in enumerate(lidog.product_cells.items(), 1):     
         arcpy.AddMessage('{} cell {} ({} of {})'.format('=' * 60, cell_name, i, num_cells))
-        src_dem_mosaic_path = cell.mosaic()
-        agg_dem = src_dem.aggregate(src_dem_mosaic_path)
-        prod_dem = ProductDem(agg_dem, cell)
+        src_dem_mosaic_path, src_res = cell.mosaic()
+
+        if src_res == 1:
+            product_source_dem = src_dem.aggregate(src_dem_mosaic_path)
+        else:
+            product_source_dem = arcpy.Raster(str(src_dem_mosaic_path))
+        
+        prod_dem = ProductDem(product_source_dem, cell)
 
         # create cell mqual
         cell_mqual = cell.create_mqual(prod_dem.generalize_water_coverage())
