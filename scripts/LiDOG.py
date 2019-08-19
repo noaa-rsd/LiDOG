@@ -71,9 +71,9 @@ class SourceDem:
 
     def extract_band4_cells(self):
 
-        self.band4_cells_dir = self.proj_dir / 'Source_DEM_Band4_Cells' / self.basename
+        self.band4_cells_dir = self.proj_dir / 'Source_DEM_Band4_Cells'
         try:
-            os.mkdir(str(self.band4_cells_dir))
+            os.mkdir(self.band4_cells_dir)
         except Exception as e:
             pass
 
@@ -84,11 +84,6 @@ class SourceDem:
         arcpy.AddMessage('{} coverage intersects {} band-4 cells'.format(self.name, num_cells))
 
         self.band4_cells = self.band4_cells_dir / (self.basename + '_BAND4_cells.shp')
-        try:
-            os.mkdir(self.band4_cells_dir)
-        except Exception as e:
-            pass
-
         arcpy.CopyFeatures_management('band4', str(self.band4_cells))
         
         band4_cells = []
@@ -258,18 +253,22 @@ class ProductCell:
             geom = geom_utm
         else:  # individual shapely polygons
             geom = [geom_utm]
-        out_r, out_transform = mask(dataset=src_r, shapes=geom, crop=True)
 
-        out_meta = src_r.meta.copy()
-        out_meta.update({'driver': 'GTiff',
-                         'height': out_r.shape[1],
-                         'width': out_r.shape[2],
-                         'transform': out_transform,
-                         'crs': src_r.crs.to_proj4(),
-                         'compress': 'lzw'})
+        try:
+            out_r, out_transform = mask(dataset=src_r, shapes=geom, crop=True)
+            out_meta = src_r.meta.copy()
+            out_meta.update({'driver': 'GTiff',
+                             'height': out_r.shape[1],
+                             'width': out_r.shape[2],
+                             'transform': out_transform,
+                             'crs': src_r.crs.to_proj4(),
+                             'compress': 'lzw'})
 
-        with rasterio.open(masked_dem_path, "w", **out_meta) as masked_dem:
-            masked_dem.write(out_r)
+            with rasterio.open(masked_dem_path, "w", **out_meta) as masked_dem:
+                masked_dem.write(out_r)
+
+        except Exception as e:
+            arcpy.AddMessage(e)
 
     def clip_src_dem(self, dem):
         arcpy.AddMessage('clipping {} with {} cell buffer...'.format(dem.name, self.name))
@@ -445,7 +444,7 @@ class LiDOG:
         arcpy.CreateFeatureclass_management('in_memory', 'extents', 'POLYGON',
                                             str(ProductCell.src_dems_template_shp),
                                             spatial_reference=self.spatial_ref)
-        src_dem_extents = arcpy.da.InsertCursor(proj_band4_shp_temp, ['name', 'resolution', 'SHAPE@'])
+        src_dem_extents = arcpy.da.InsertCursor(src_dems_extent_name_temp, ['name', 'resolution', 'SHAPE@'])
         for dem in self.source_dems: 
             desc = arcpy.Describe(str(dem))
             dem_res = desc.meancellwidth
@@ -474,6 +473,27 @@ class LiDOG:
                                                         str(self.out_dir), 
                                                         project_band4_cells_path.name)
         return 
+
+    def generate_summary_plot(self):
+        arcpy.mp.ArcGISProject('CURRENT')
+        aprx_map = aprx.listMaps("Map")[0]
+        aprx_map.addDataFromPath(r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\All_Band4_V5.lyrx')
+        
+        lyr = aprx_map.addDataFromPath(r'...\LakeMichigan_Band4_Cells.shp')
+        lyr = aprx_map.addDataFromPath(r'...\LakeMichigan_Source_Dem_Extents.shp')
+        lyr = aprx_map.addDataFromPath(r'...\LakeMichigan_M_QUAL.shp')
+    
+        lyr = aprx_map.listLayers("LakeMichigan_Band4_Cells")[0]
+        lyt = aprx.listLayouts("Layout")[0]
+        mf = lyt.listElements("mapframe_element", "Map Frame")[0]
+        mf.camera.setExtent(mf.getLayerExtent(lyr, False, True))
+
+        arcpy.ApplySymbologyFromLayer_management(lyr, r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\Project_Band4_Cells.lyrx')
+        arcpy.ApplySymbologyFromLayer_management(lyr, r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\Project_Band4_Cells.lyrx')
+        arcpy.ApplySymbologyFromLayer_management(lyr, r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\Project_Band4_Cells.lyrx')
+
+        arcpy.Exprt...
+
 
 
 def set_env_vars():
@@ -531,6 +551,9 @@ if __name__ == '__main__':
             # clip dem1 with cell buffer
             lidog.product_cells[cell_name].clip_src_dem(src_dem)
         
+    # create shapefile with source DEM extents
+    lidog.create_source_dems_extents()
+
     num_cells = len(lidog.product_cells)
     for i, (cell_name, cell) in enumerate(lidog.product_cells.items(), 1):     
         arcpy.AddMessage('{} cell {} ({} of {})'.format('=' * 60, cell_name, i, num_cells))
@@ -539,6 +562,7 @@ if __name__ == '__main__':
         if src_res == 1:
             product_source_dem = src_dem.aggregate(src_dem_mosaic_path)
         else:
+            arcpy.AddMessage('source DEM resolution != 1m, not aggregating source DEM')
             product_source_dem = arcpy.Raster(str(src_dem_mosaic_path))
         
         prod_dem = ProductDem(product_source_dem, cell)
