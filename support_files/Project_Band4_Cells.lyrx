@@ -297,14 +297,14 @@
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 2,
+                "width" : 1,
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
                     168,
                     0,
                     132,
-                    100
+                    0
                   ]
                 }
               },

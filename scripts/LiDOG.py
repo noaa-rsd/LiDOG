@@ -101,10 +101,11 @@ class ProductDem:
         self.pre_product_path = self.product_cell_path / (self.product_cell_name + '_5m_DEM.tif')
         self.raster = agg_raster
         self.raster.save(str(self.pre_product_path))
-        self.max_depth = -20
+        #self.max_depth = -20
 
     def mask_land(self):
-        query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
+        #query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
+        query_str = 'VALUE >= 0'
         agg_dem_water = SetNull(self.raster, self.raster, query_str)
         return agg_dem_water
 
@@ -418,6 +419,9 @@ class LiDOG:
         self.product_cells = {}
         self.src_dem_band4_cells = []
         self.src_dem_band4_shp_dir = self.out_dir
+        self.project_band4_cells_path = None
+        self.src_dems_extent_path = None
+        self.mqual_path = None
 
         try:
             os.mkdir(str(self.src_dem_band4_shp_dir))
@@ -426,7 +430,7 @@ class LiDOG:
 
     def create_project_band4_cells_shp(self):
         project_band4_cells_name = self.project_id + '_Band4_Cells.shp'
-        project_band4_cells_path = self.src_dem_band4_shp_dir / project_band4_cells_name
+        self.project_band4_cells_path = self.src_dem_band4_shp_dir / project_band4_cells_name
         proj_band4_shp_temp = r'in_memory\band4'
         arcpy.CreateFeatureclass_management('in_memory', 'band4', 'POLYGON',
                                             str(ProductCell.band4_shp),
@@ -435,11 +439,11 @@ class LiDOG:
         for cell in self.product_cells.values(): 
             band4_cells.insertRow([cell.name, cell.geom])
         del band4_cells
-        arcpy.CopyFeatures_management(proj_band4_shp_temp, str(project_band4_cells_path))
+        arcpy.CopyFeatures_management(proj_band4_shp_temp, str(self.project_band4_cells_path))
 
     def create_source_dems_extents(self):
         src_dems_extent_name = self.project_id + '_Source_Dem_Extents.shp'
-        src_dems_extent_name_path = self.out_dir / src_dems_extent_name
+        self.src_dems_extent_path = self.out_dir / src_dems_extent_name
         src_dems_extent_name_temp = r'in_memory\extents'
         arcpy.CreateFeatureclass_management('in_memory', 'extents', 'POLYGON',
                                             str(ProductCell.src_dems_template_shp),
@@ -450,50 +454,48 @@ class LiDOG:
             dem_res = desc.meancellwidth
             src_dem_extents.insertRow([dem.name, dem_res, desc.extent.polygon])
         del src_dem_extents
-        arcpy.CopyFeatures_management(src_dems_extent_name_temp, str(src_dems_extent_name_path))       
-
-    def merge_dem_band4_coverages_DEPRACATE(self):
-        project_band4_cells_name = self.project_id + '_Band4_Cells.shp'
-        project_band4_cells_path = self.out_dir / project_band4_cells_name
-
-        if len(self.src_dem_band4_cells) > 1:
-            temp_band4 = r'in_memory\temp_band4_coverage_shp'
-            current_band4 = r'in_memory\current_band4_coverage'
-            arcpy.Union_analysis([str(self.src_dem_band4_cells[0]), 
-                                  str(self.src_dem_band4_cells[1])], 
-                                 current_band4)
-
-            for i in range(2, len(self.src_dem_band4_cells)):
-                arcpy.Union_analysis([current_band4, str(self.src_dem_band4_cells[i])], temp_band4)
-                arcpy.CopyFeatures_management(temp_band4, current_band4)
-            arcpy.CopyFeatures_management(current_band4, str(project_band4_cells_path))
-
-        else:
-            arcpy.FeatureClassToFeatureClass_conversion(str(self.src_dem_band4_cells[0]), 
-                                                        str(self.out_dir), 
-                                                        project_band4_cells_path.name)
-        return 
+        arcpy.CopyFeatures_management(src_dems_extent_name_temp, str(self.src_dems_extent_path))       
 
     def generate_summary_plot(self):
-        arcpy.mp.ArcGISProject('CURRENT')
+        aprx_dir = self.out_dir / 'ArcGIS_aprx'
+        project_aprx = aprx_dir / (self.project_id + '.aprx')
+
+        try:
+            os.mkdir(str(aprx_dir))
+        except Exception as e:
+            pass
+
+        lidog_dir = Path(os.path.dirname(os.path.realpath(__file__)))
+        support_files_dir = lidog_dir.parents[0] / 'support_files'
+        aprx_template_path = lidog_dir.parents[0] / 'LiDOG_ProjectWideTemplate.aprx'
+
+        all_band4_lyr_path = support_files_dir / 'All_Band4_V5.lyrx'
+        lyr_cells_template_path = support_files_dir / 'Project_Band4_Cells.lyrx'
+        lyr_extents_template_path = support_files_dir / 'Source_Dem_Extents.lyrx'
+        lyr_mqual_template_path = support_files_dir / 'M_QUAL.lyrx'
+
+        aprx = arcpy.mp.ArcGISProject(str(aprx_template_path))
+        aprx.saveACopy(str(project_aprx))
+
+        aprx = arcpy.mp.ArcGISProject(str(project_aprx))
         aprx_map = aprx.listMaps("Map")[0]
-        aprx_map.addDataFromPath(r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\All_Band4_V5.lyrx')
+        aprx_map.addDataFromPath(str(all_band4_lyr_path))
         
-        lyr = aprx_map.addDataFromPath(r'...\LakeMichigan_Band4_Cells.shp')
-        lyr = aprx_map.addDataFromPath(r'...\LakeMichigan_Source_Dem_Extents.shp')
-        lyr = aprx_map.addDataFromPath(r'...\LakeMichigan_M_QUAL.shp')
+        lyr_cells = aprx_map.addDataFromPath(str(self.project_band4_cells_path))
+        lyr_extents = aprx_map.addDataFromPath(str(self.src_dems_extent_path))
+        lyr_mqual = aprx_map.addDataFromPath(str(self.mqual_path))
     
-        lyr = aprx_map.listLayers("LakeMichigan_Band4_Cells")[0]
+        lyr = aprx_map.listLayers(self.project_band4_cells_path.stem)[0]
         lyt = aprx.listLayouts("Layout")[0]
         mf = lyt.listElements("mapframe_element", "Map Frame")[0]
         mf.camera.setExtent(mf.getLayerExtent(lyr, False, True))
 
-        arcpy.ApplySymbologyFromLayer_management(lyr, r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\Project_Band4_Cells.lyrx')
-        arcpy.ApplySymbologyFromLayer_management(lyr, r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\Project_Band4_Cells.lyrx')
-        arcpy.ApplySymbologyFromLayer_management(lyr, r'Z:\LiDOG\LiDOG_noaa-rsd\support_files\Project_Band4_Cells.lyrx')
+        arcpy.ApplySymbologyFromLayer_management(lyr_cells, str(lyr_cells_template_path))
+        arcpy.ApplySymbologyFromLayer_management(lyr_extents, str(lyr_extents_template_path))
+        arcpy.ApplySymbologyFromLayer_management(lyr_mqual, str(lyr_mqual_template_path))
 
-        arcpy.Exprt...
-
+        pad_path = str(self.out_dir / '{}_Product_Cells_Overview.pdf'.format(self.project_id))
+        lyt.exportToPDF(pad_path, resolution=600)
 
 
 def set_env_vars():
@@ -576,14 +578,17 @@ if __name__ == '__main__':
 
     # create project-wide M_QUAL
     arcpy.AddMessage('+' * 40)
-    project_mqual = mqual.combine_mquals()
+    lidog.mqual_path = mqual.combine_mquals()
 
     # create project-wide band4 cells shp
     arcpy.AddMessage('creating project-wide band4 cells shp...')
     lidog.create_project_band4_cells_shp()
 
+    # export pdf of product cells overview
+    lidog.generate_summary_plot()
+    
     # update metadata with project-wide M_QUAL extents
     arcpy.AddMessage('exporting xml metatdata file...')
     metadata.get_xml_template()
-    metadata.update_metadata(project_mqual)
+    metadata.update_metadata(lidog.mqual_path)
     metadata.export_metadata()
