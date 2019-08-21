@@ -1,7 +1,7 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "2.3.0",
-  "build" : 15769,
+  "version" : "2.4.0",
+  "build" : 19948,
   "layers" : [
     "CIMPATH=map/all_band4_v5.xml"
   ],
@@ -238,7 +238,7 @@
                   }
                 ]
               },
-              "height" : 6,
+              "height" : 8,
               "hinting" : "Default",
               "horizontalAlignment" : "Left",
               "kerning" : true,
@@ -324,7 +324,7 @@
                     168,
                     0,
                     132,
-                    100
+                    50
                   ]
                 }
               },

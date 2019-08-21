@@ -1,27 +1,28 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "2.3.0",
-  "build" : 15769,
+  "version" : "2.4.0",
+  "build" : 19948,
   "layers" : [
-    "CIMPATH=map/lakemichigan_band4_cells.xml"
+    "CIMPATH=map/source_dem_extents_template.xml"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
-      "name" : "LakeMichigan_Band4_Cells",
-      "uRI" : "CIMPATH=map/lakemichigan_band4_cells.xml",
+      "name" : "Source_Dem_Extents_TEMPLATE",
+      "uRI" : "CIMPATH=map/source_dem_extents_template.xml",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
       "useSourceMetadata" : true,
-      "description" : "LakeMichigan_Band4_Cells",
+      "description" : "Source_Dem_Extents_TEMPLATE",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "mapElevationID" : "{5C2DB459-505E-4444-9D29-533626D2E990}"
+        "mapElevationID" : "{B17EFFD0-00C7-4D26-A7FF-520FA5ECB75D}"
       },
       "expanded" : true,
       "layerType" : "Operational",
       "showLegends" : true,
+      "transparency" : 65,
       "visibility" : true,
       "displayCacheType" : "Permanent",
       "maxDisplayCacheAge" : 5,
@@ -33,13 +34,13 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "CellName",
+        "displayField" : "name",
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMStandardDataConnection",
-          "workspaceConnectionString" : "DATABASE=X:\\iocm_deliverables\\ocs\\GL07-16-TB-J\\michigan\\PRODUCT_CELLS",
+          "workspaceConnectionString" : "DATABASE=.",
           "workspaceFactory" : "Shapefile",
-          "dataset" : "LakeMichigan_Band4_Cells.shp",
+          "dataset" : "Source_Dem_Extents_TEMPLATE.shp",
           "datasetType" : "esriDTFeatureClass"
         },
         "studyAreaSpatialRel" : "esriSpatialRelUndefined",
@@ -51,7 +52,7 @@
       "labelClasses" : [
         {
           "type" : "CIMLabelClass",
-          "expression" : "$feature.CellName",
+          "expression" : "$feature.name",
           "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -76,7 +77,7 @@
             "graticuleAlignmentType" : "Straight",
             "keyNumberGroupName" : "Default",
             "labelBuffer" : 15,
-            "labelLargestPolygon" : false,
+            "labelLargestPolygon" : true,
             "labelPriority" : -1,
             "labelStackingProperties" : {
               "type" : "CIMMaplexLabelStackingProperties",
@@ -219,7 +220,7 @@
               "fontStyleName" : "Regular",
               "fontType" : "Unspecified",
               "haloSize" : 1,
-              "height" : 14,
+              "height" : 10,
               "hinting" : "Default",
               "horizontalAlignment" : "Left",
               "kerning" : true,
@@ -230,44 +231,19 @@
                 "type" : "CIMPolygonSymbol",
                 "symbolLayers" : [
                   {
-                    "type" : "CIMSolidStroke",
-                    "enable" : true,
-                    "capStyle" : "Round",
-                    "joinStyle" : "Round",
-                    "lineStyle3D" : "Strip",
-                    "miterLimit" : 10,
-                    "width" : 0.5,
-                    "color" : {
-                      "type" : "CIMRGBColor",
-                      "values" : [
-                        255,
-                        255,
-                        255,
-                        100
-                      ]
-                    }
-                  },
-                  {
                     "type" : "CIMSolidFill",
                     "enable" : true,
                     "color" : {
                       "type" : "CIMRGBColor",
                       "values" : [
-                        168,
                         0,
-                        132,
+                        0,
+                        0,
                         100
                       ]
                     }
                   }
                 ]
-              },
-              "symbol3DProperties" : {
-                "type" : "CIM3DSymbolProperties",
-                "dominantSizeAxis3D" : "Z",
-                "rotationOrder3D" : "YXZ",
-                "scaleZ" : 1,
-                "scaleY" : 1
               },
               "textCase" : "Normal",
               "textDirection" : "LTR",
@@ -301,10 +277,10 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    168,
                     0,
-                    132,
-                    0
+                    112,
+                    255,
+                    100
                   ]
                 }
               },
@@ -314,10 +290,10 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
+                    115,
+                    223,
                     255,
-                    190,
-                    232,
-                    35
+                    100
                   ]
                 }
               }
@@ -327,6 +303,27 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "elevationSurfaces" : [
+    {
+      "type" : "CIMMapElevationSurface",
+      "elevationMode" : "BaseGlobeSurface",
+      "name" : "Ground",
+      "verticalExaggeration" : 1,
+      "mapElevationID" : "{B17EFFD0-00C7-4D26-A7FF-520FA5ECB75D}",
+      "color" : {
+        "type" : "CIMRGBColor",
+        "values" : [
+          255,
+          255,
+          255,
+          100
+        ]
+      },
+      "surfaceTINShadingMode" : "Smooth",
+      "visibility" : true,
+      "expanded" : true
     }
   ]
 }

@@ -1,20 +1,20 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "2.3.0",
-  "build" : 15769,
+  "version" : "2.4.0",
+  "build" : 19948,
   "layers" : [
-    "CIMPATH=map/lakemichigan_m_qual.xml"
+    "CIMPATH=map/m_qual_template.xml"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
-      "name" : "LakeMichigan_M_QUAL",
-      "uRI" : "CIMPATH=map/lakemichigan_m_qual.xml",
+      "name" : "M_QUAL_TEMPLATE",
+      "uRI" : "CIMPATH=map/m_qual_template.xml",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
       "useSourceMetadata" : true,
-      "description" : "LakeMichigan_M_QUAL",
+      "description" : "M_QUAL_TEMPLATE",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
         "mapElevationID" : "{B17EFFD0-00C7-4D26-A7FF-520FA5ECB75D}"
@@ -33,13 +33,13 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "Id",
+        "displayField" : "NAME",
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMStandardDataConnection",
-          "workspaceConnectionString" : "DATABASE=X:\\iocm_deliverables\\ocs\\GL07-16-TB-J\\michigan\\PRODUCT_CELLS",
+          "workspaceConnectionString" : "DATABASE=.",
           "workspaceFactory" : "Shapefile",
-          "dataset" : "LakeMichigan_M_QUAL.shp",
+          "dataset" : "M_QUAL_TEMPLATE.shp",
           "datasetType" : "esriDTFeatureClass"
         },
         "studyAreaSpatialRel" : "esriSpatialRelUndefined",
@@ -51,7 +51,7 @@
       "labelClasses" : [
         {
           "type" : "CIMLabelClass",
-          "expression" : "$feature.Id",
+          "expression" : "$feature.NAME",
           "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -76,7 +76,7 @@
             "graticuleAlignmentType" : "Straight",
             "keyNumberGroupName" : "Default",
             "labelBuffer" : 15,
-            "labelLargestPolygon" : false,
+            "labelLargestPolygon" : true,
             "labelPriority" : -1,
             "labelStackingProperties" : {
               "type" : "CIMMaplexLabelStackingProperties",
@@ -272,13 +272,13 @@
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 1,
+                "width" : 0.69999999999999996,
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    0,
-                    92,
-                    230,
+                    110,
+                    110,
+                    110,
                     100
                   ]
                 }
@@ -290,7 +290,7 @@
                   "type" : "CIMRGBColor",
                   "values" : [
                     0,
-                    197,
+                    112,
                     255,
                     100
                   ]

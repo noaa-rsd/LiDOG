@@ -1,20 +1,20 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "2.3.0",
-  "build" : 15769,
+  "version" : "2.4.0",
+  "build" : 19948,
   "layers" : [
-    "CIMPATH=map/lakemichigan_source_dem_extents.xml"
+    "CIMPATH=map/project_band4_cells_template.xml"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
-      "name" : "LakeMichigan_Source_Dem_Extents",
-      "uRI" : "CIMPATH=map/lakemichigan_source_dem_extents.xml",
+      "name" : "Project_Band4_Cells_TEMPLATE",
+      "uRI" : "CIMPATH=map/project_band4_cells_template.xml",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
       "useSourceMetadata" : true,
-      "description" : "LakeMichigan_Source_Dem_Extents",
+      "description" : "Project_Band4_Cells_TEMPLATE",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
         "mapElevationID" : "{B17EFFD0-00C7-4D26-A7FF-520FA5ECB75D}"
@@ -22,7 +22,7 @@
       "expanded" : true,
       "layerType" : "Operational",
       "showLegends" : true,
-      "transparency" : 20,
+      "transparency" : 93,
       "visibility" : true,
       "displayCacheType" : "Permanent",
       "maxDisplayCacheAge" : 5,
@@ -34,13 +34,13 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "name",
+        "displayField" : "CellName",
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMStandardDataConnection",
-          "workspaceConnectionString" : "DATABASE=X:\\iocm_deliverables\\ocs\\GL07-16-TB-J\\michigan\\PRODUCT_CELLS",
+          "workspaceConnectionString" : "DATABASE=.",
           "workspaceFactory" : "Shapefile",
-          "dataset" : "LakeMichigan_Source_Dem_Extents.shp",
+          "dataset" : "Project_Band4_Cells_TEMPLATE.shp",
           "datasetType" : "esriDTFeatureClass"
         },
         "studyAreaSpatialRel" : "esriSpatialRelUndefined",
@@ -52,7 +52,7 @@
       "labelClasses" : [
         {
           "type" : "CIMLabelClass",
-          "expression" : "$feature.resolution + 'm'",
+          "expression" : "$feature.CellName",
           "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -77,7 +77,7 @@
             "graticuleAlignmentType" : "Straight",
             "keyNumberGroupName" : "Default",
             "labelBuffer" : 15,
-            "labelLargestPolygon" : false,
+            "labelLargestPolygon" : true,
             "labelPriority" : -1,
             "labelStackingProperties" : {
               "type" : "CIMMaplexLabelStackingProperties",
@@ -237,20 +237,13 @@
                       "type" : "CIMRGBColor",
                       "values" : [
                         0,
-                        112,
-                        255,
+                        0,
+                        0,
                         100
                       ]
                     }
                   }
                 ]
-              },
-              "symbol3DProperties" : {
-                "type" : "CIM3DSymbolProperties",
-                "dominantSizeAxis3D" : "Z",
-                "rotationOrder3D" : "YXZ",
-                "scaleZ" : 1,
-                "scaleY" : 1
               },
               "textCase" : "Normal",
               "textDirection" : "LTR",
@@ -280,13 +273,13 @@
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 1,
+                "width" : 0.69999999999999996,
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    0,
-                    92,
-                    230,
+                    110,
+                    110,
+                    110,
                     100
                   ]
                 }
@@ -297,10 +290,10 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    115,
-                    178,
-                    255,
-                    60
+                    168,
+                    0,
+                    132,
+                    100
                   ]
                 }
               }

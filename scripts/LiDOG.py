@@ -377,7 +377,7 @@ class Mqual:
         self.sursta = lidog.sursta
         self.surend = lidog.surend
         self.spatial_ref = lidog.spatial_ref
-        self.mqual_schema_rpath = Path('../support_files/M_QUAL.shp')
+        self.mqual_schema_rpath = Path('../support_files/M_QUAL_TEMPLATE.shp')
         self.mquals = []
         self.cells = None
         self.proj_dir = lidog.out_dir
@@ -466,36 +466,74 @@ class LiDOG:
             pass
 
         lidog_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-        support_files_dir = lidog_dir.parents[0] / 'support_files'
-        aprx_template_path = lidog_dir.parents[0] / 'LiDOG_ProjectWideTemplate.aprx'
+        support_files_dir = lidog_dir.parent / 'support_files'
+        aprx_template_path = lidog_dir.parent / 'LiDOG_ProjectWideTemplate.aprx'
 
-        all_band4_lyr_path = support_files_dir / 'All_Band4_V5.lyrx'
-        lyr_cells_template_path = support_files_dir / 'Project_Band4_Cells.lyrx'
-        lyr_extents_template_path = support_files_dir / 'Source_Dem_Extents.lyrx'
-        lyr_mqual_template_path = support_files_dir / 'M_QUAL.lyrx'
+        lyr_cells_template_path = support_files_dir / 'Project_Band4_Cells_TEMPLATE.lyrx'
+        lyr_extents_template_path = support_files_dir / 'Source_Dem_Extents_TEMPLATE.lyrx'
+        lyr_mqual_template_path = support_files_dir / 'M_QUAL_TEMPLATE.lyrx'
+        lyr_all_band4_cells = support_files_dir / 'All_Band4_V5.lyrx'
 
         aprx = arcpy.mp.ArcGISProject(str(aprx_template_path))
-        aprx.saveACopy(str(project_aprx))
-
-        aprx = arcpy.mp.ArcGISProject(str(project_aprx))
         aprx_map = aprx.listMaps("Map")[0]
-        aprx_map.addDataFromPath(str(all_band4_lyr_path))
         
-        lyr_cells = aprx_map.addDataFromPath(str(self.project_band4_cells_path))
-        lyr_extents = aprx_map.addDataFromPath(str(self.src_dems_extent_path))
-        lyr_mqual = aprx_map.addDataFromPath(str(self.mqual_path))
-    
-        lyr = aprx_map.listLayers(self.project_band4_cells_path.stem)[0]
+        lyrx_cells = self.project_band4_cells_path.parent / (self.project_band4_cells_path.stem + '.lyrx')
+        lyrx_extents = self.src_dems_extent_path.parent / (self.src_dems_extent_path.stem + '.lyrx')
+        lyrx_mqual = self.mqual_path.parent / (self.mqual_path.stem + '.lyrx')
+
+        arcpy.SaveToLayerFile_management(arcpy.MakeFeatureLayer_management(str(self.project_band4_cells_path)), str(lyrx_cells))
+        arcpy.SaveToLayerFile_management(arcpy.MakeFeatureLayer_management(str(self.src_dems_extent_path)), str(lyrx_extents))
+        arcpy.SaveToLayerFile_management(arcpy.MakeFeatureLayer_management(str(self.mqual_path)), str(lyrx_mqual))
+
+        lyr_cells_template = arcpy.mp.LayerFile(str(lyr_cells_template_path))
+        lyr_extents_template = arcpy.mp.LayerFile(str(lyr_extents_template_path))
+        lyr_mqual_template = arcpy.mp.LayerFile(str(lyr_mqual_template_path))
+
+        lyrx_cells = arcpy.mp.LayerFile(str(lyrx_cells))
+        lyrx_extents = arcpy.mp.LayerFile(str(lyrx_extents))
+        lyrx_mqual = arcpy.mp.LayerFile(str(lyrx_mqual))
+
+        arcpy.ApplySymbologyFromLayer_management(lyrx_cells.listLayers()[0], lyr_cells_template.listLayers()[0])
+        arcpy.ApplySymbologyFromLayer_management(lyrx_extents.listLayers()[0], lyr_extents_template.listLayers()[0])
+        arcpy.ApplySymbologyFromLayer_management(lyrx_mqual.listLayers()[0], lyr_mqual_template.listLayers()[0])
+
+        lyrx_cells.save()
+        lyrx_extents.save()
+        lyrx_mqual.save()
+
+        aprx_map.addDataFromPath(lyrx_extents)
+        aprx_map.addDataFromPath(lyrx_mqual)
+        aprx_map.addDataFromPath(lyrx_cells)
+        aprx_map.addDataFromPath(str(lyr_all_band4_cells))
+
+        lyrx_cells_lyr_basename = lyrx_cells.listLayers()[0].name
+        lyr = aprx_map.listLayers(lyrx_cells_lyr_basename)[0]
         lyt = aprx.listLayouts("Layout")[0]
         mf = lyt.listElements("mapframe_element", "Map Frame")[0]
-        mf.camera.setExtent(mf.getLayerExtent(lyr, False, True))
 
-        arcpy.ApplySymbologyFromLayer_management(lyr_cells, str(lyr_cells_template_path))
-        arcpy.ApplySymbologyFromLayer_management(lyr_extents, str(lyr_extents_template_path))
-        arcpy.ApplySymbologyFromLayer_management(lyr_mqual, str(lyr_mqual_template_path))
+        def buffer_extent(ext, buffer_factor):
+            dx = ext.XMax - ext.XMin
+            dy = ext.YMax - ext.YMin
+            buff_x = dx * buffer_factor
+            buff_y = dy * buffer_factor 
+            ext.XMin -= buff_x
+            ext.XMax += buff_x
+            ext.YMin -= buff_y
+            ext.YMax += buff_y
+            return ext
 
-        pad_path = str(self.out_dir / '{}_Product_Cells_Overview.pdf'.format(self.project_id))
-        lyt.exportToPDF(pad_path, resolution=600)
+        ext = mf.getLayerExtent(lyr, False, True)
+        buffer_factor = 0.1
+        ext = buffer_extent(ext, percent_buff)
+
+        mf.camera.setExtent(ext)
+
+        aprx.saveACopy(str(project_aprx))
+
+        pdf_path = str(self.out_dir / '{}_Product_Cells_Overview.pdf'.format(self.project_id))
+        png_path = str(self.out_dir / '{}_Product_Cells_Overview.png'.format(self.project_id))
+        lyt.exportToPDF(pdf_path, resolution=600)
+        lyt.exportToPNG(png_path, resolution=600)
 
 
 def set_env_vars():
