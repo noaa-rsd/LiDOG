@@ -37,7 +37,7 @@
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMStandardDataConnection",
-          "workspaceConnectionString" : "DATABASE=.",
+          "workspaceConnectionString" : "DATABASE=\\\\ngs-s-brunswick\\sdd\\Nick.Forfinski-Sarko\\LiDOG\\LiDOG_noaa-rsd\\support_files",
           "workspaceFactory" : "Shapefile",
           "dataset" : "M_QUAL_TEMPLATE.shp",
           "datasetType" : "esriDTFeatureClass"
@@ -276,9 +276,9 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    110,
-                    110,
-                    110,
+                    0,
+                    92,
+                    230,
                     100
                   ]
                 }

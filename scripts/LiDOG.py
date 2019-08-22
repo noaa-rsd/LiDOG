@@ -41,8 +41,8 @@ class SourceDem:
         self.name = self.basename + '.tif'
         self.agg_factor = 5
         self.proj_dir = lidog.out_dir
+        self.proj_support_dir = lidog.project_support_dir
         self.band4_cells = None
-        #self.raster = arcpy.sa.Raster(str(self.path))
 
     def aggregate(self, mosaic_path):
         arcpy.AddMessage('Aggregating mosaicked source DEM to product-DEM resolution...')
@@ -74,7 +74,7 @@ class SourceDem:
 
     def extract_band4_cells(self):
 
-        self.band4_cells_dir = self.proj_dir / 'Source_DEM_Band4_Cells'
+        self.band4_cells_dir = self.proj_support_dir / 'Source_DEM_Band4_Cells'
         try:
             os.mkdir(self.band4_cells_dir)
         except Exception as e:
@@ -101,14 +101,14 @@ class ProductDem:
     def __init__(self, agg_raster, cell):
         self.product_cell_name = cell.name
         self.product_cell_path = cell.product_cell_path
-        self.pre_product_path = self.product_cell_path / (self.product_cell_name + '_5m_DEM.tif')
+        self.pre_product_path = cell.cell_support_dir / (self.product_cell_name + '_preliminary_5m_DEM.tif')
         self.raster = agg_raster
         self.raster.save(str(self.pre_product_path))
-        #self.max_depth = -20
+        self.max_depth = -100
 
     def mask_land(self):
-        #query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
-        query_str = 'VALUE >= 0'
+        query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
+        #query_str = 'VALUE >= 0'
         agg_dem_water = SetNull(self.raster, self.raster, query_str)
         return agg_dem_water
 
@@ -127,8 +127,9 @@ class ProductCell:
     def __init__(self, cell, lidog, mqual):
         self.name = cell[0]
         self.geom = cell[1]
+        self.proj_id = lidog.project_id
         self.proj_dir = lidog.out_dir
-        self.product_cell_name = '{}_ProductCell'.format(self.name)
+        self.product_cell_name = '{}_{}'.format(lidog.project_id, self.name)
         self.mqual_name = None
         self.mqual_path = None
         self.mqual_in_memory = None
@@ -139,16 +140,21 @@ class ProductCell:
         self.buffer_meters = 50
         self.denoise_threshold = 1200  # square meters
         self.product_cell_path = self.make_cell_dir()
-        self.clipped_dem_dir = self.product_cell_path / 'source_dems'
-        self.extent_fc_path = self.make_extent_fc()
-        self.buffer_fc_path = self.buffer()
+        self.cell_support_dir = self.product_cell_path / '{}_support_files'.format(self.name)
+        self.clipped_dem_dir = self.cell_support_dir / 'source_dems'
+
+        try:
+            os.mkdir(str(self.cell_support_dir))
+        except Exception as e:
+            pass
 
         try:
             os.mkdir(str(self.clipped_dem_dir))
         except Exception as e:
             pass
 
-        pass
+        self.extent_fc_path = self.make_extent_fc()
+        self.buffer_fc_path = self.buffer()
 
     def create_mqual(self, generalized_coverage):
         arcpy.AddMessage('generating M_QUAL from generalized water coverage...')
@@ -157,7 +163,7 @@ class ProductCell:
         polys_dissolved = 'in_memory\DissolvedFC'
         arcpy.Dissolve_management(dem_polys, polys_dissolved, multi_part='SINGLE_PART')
 
-        self.mqual_name = '{}_M_QUAL.shp'.format(self.name)
+        self.mqual_name = '{}_{}_mqual.shp'.format(self.proj_id, self.name)
         self.mqual_path = self.product_cell_path / self.mqual_name
 
         self.mqual_in_memory ='in_memory\pre_mqual_{}'.format(cell.name)
@@ -192,7 +198,7 @@ class ProductCell:
             return cell_path
 
     def make_extent_fc(self):
-        extent_fc_path = self.product_cell_path / (self.name + '_CellOutline.shp')
+        extent_fc_path = self.cell_support_dir / (self.name + '_CellOutline.shp')
         if not arcpy.Exists(str(extent_fc_path)):
             try:
                 arcpy.CopyFeatures_management(self.geom, str(extent_fc_path))
@@ -247,16 +253,13 @@ class ProductCell:
 
     def mask_dem(self, dem_path, geom, masked_dem_path):
         src_r = rasterio.open(dem_path)
-        project = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),
-            pyproj.Proj(init='epsg:{}'.format(src_r.crs.to_epsg())))
 
-        geom_utm = transform(project, geom)
-        if isinstance(geom_utm, GeometryCollection):
-            geom = geom_utm
-        else:  # individual shapely polygons
-            geom = [geom_utm]
+        if  not isinstance(geom, GeometryCollection):  # only tranform cell boundary, not mqual
+            project = partial(
+                pyproj.transform,
+                pyproj.Proj(init='epsg:4326'),
+                pyproj.Proj(init='epsg:{}'.format(src_r.crs.to_epsg())))
+            geom = [transform(project, geom)]
 
         try:
             out_r, out_transform = mask(dataset=src_r, shapes=geom, crop=True)
@@ -283,7 +286,8 @@ class ProductCell:
 
     def clip_pre_product_dem(self, dem):
         arcpy.AddMessage('clipping preliminary product DEM with M_QUAL...')
-        product_dem_path = self.product_cell_path / (self.product_cell_name + '_5m_DEM_M_QUAL.tif')
+        product_dem_name = '_'.join([self.proj_id, self.product_cell_name, 'mllw', '5m', 'sb', 'dem']) + '.tif'
+        product_dem_path = self.product_cell_path / product_dem_name
         mqual_geom = self.get_mqual_geometry()
         self.mask_dem(dem, mqual_geom, product_dem_path)
 
@@ -362,7 +366,7 @@ class MetaData:
 class Mqual:
 
     def __init__(self, lidog, meta):
-        self.project_mqual_name = '{}_M_QUAL.shp'.format(lidog.project_id)
+        self.project_mqual_name = '{}_mqual.shp'.format(lidog.project_id)
         self.project_mqual_path = lidog.out_dir / self.project_mqual_name
         self.dem_mqual_path = None
         self.fields = collections.OrderedDict([
@@ -421,13 +425,19 @@ class LiDOG:
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
-        self.src_dem_band4_shp_dir = self.out_dir
         self.project_band4_cells_path = None
         self.src_dems_extent_path = None
         self.mqual_path = None
+        self.project_support_dir = self.out_dir / '{}_support_files'.format(self.project_id)
+        self.src_dem_band4_shp_dir = self.project_support_dir
 
         try:
             os.mkdir(str(self.src_dem_band4_shp_dir))
+        except Exception as e:
+            pass
+
+        try:
+            os.mkdir(self.project_support_dir)
         except Exception as e:
             pass
 
@@ -446,7 +456,7 @@ class LiDOG:
 
     def create_source_dems_extents(self):
         src_dems_extent_name = self.project_id + '_Source_Dem_Extents.shp'
-        self.src_dems_extent_path = self.out_dir / src_dems_extent_name
+        self.src_dems_extent_path = self.project_support_dir / src_dems_extent_name
         src_dems_extent_name_temp = r'in_memory\extents'
         arcpy.CreateFeatureclass_management('in_memory', 'extents', 'POLYGON',
                                             str(ProductCell.src_dems_template_shp),
@@ -461,7 +471,7 @@ class LiDOG:
 
     def generate_summary_plot(self):
         arcpy.AddMessage('creating ArcGIS project with results...')
-        project_aprx = self.out_dir / (self.project_id + '.aprx')
+        project_aprx = self.project_support_dir / (self.project_id + '.aprx')
 
         try:
             os.mkdir(str(aprx_dir))
@@ -539,7 +549,7 @@ class LiDOG:
         lyt = aprx.listLayouts("Layout")[0]
         mf = lyt.listElements("mapframe_element", "Map Frame")[0]
 
-        lyt.listElements("text_element", "Text")[0].text = 'Band-4 Product Cell Index Map\n{}'.format(self.project_id)
+        lyt.listElements("text_element", "Text")[0].text = 'Product Cell (Band 4) Index Map\n{}'.format(self.project_id)
 
         ext = mf.getLayerExtent(lyr, False, True)
         ext, __, __ = buffer_extent(ext, buffer_factor)
@@ -549,10 +559,10 @@ class LiDOG:
         aprx.saveACopy(str(project_aprx))
 
         arcpy.AddMessage('generating summary plot pdf...')
-        pdf_path = str(self.out_dir / '{}_Product_Cells_Overview.pdf'.format(self.project_id))
+        pdf_path = str(self.out_dir / '{}_Product_Cells_Index_Map.pdf'.format(self.project_id))
 
         arcpy.AddMessage('generating summary plot png...')
-        png_path = str(self.out_dir / '{}_Product_Cells_Overview.png'.format(self.project_id))
+        png_path = str(self.out_dir / '{}_Product_Cells_Index_Map.png'.format(self.project_id))
 
         lyt.exportToPDF(pdf_path, resolution=600)
         lyt.exportToPNG(png_path, resolution=600)
