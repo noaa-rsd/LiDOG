@@ -11,7 +11,8 @@
       "name" : "Source_Dem_Extents_TEMPLATE",
       "uRI" : "CIMPATH=map/source_dem_extents_template.xml",
       "sourceModifiedTime" : {
-        "type" : "TimeInstant"
+        "type" : "TimeInstant",
+        "start" : 978307200000
       },
       "useSourceMetadata" : true,
       "description" : "Source_Dem_Extents_TEMPLATE",
@@ -22,7 +23,6 @@
       "expanded" : true,
       "layerType" : "Operational",
       "showLegends" : true,
-      "transparency" : 65,
       "visibility" : true,
       "displayCacheType" : "Permanent",
       "maxDisplayCacheAge" : 5,
@@ -38,7 +38,7 @@
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMStandardDataConnection",
-          "workspaceConnectionString" : "DATABASE=.",
+          "workspaceConnectionString" : "DATABASE=\\\\ngs-s-brunswick\\sdd\\Nick.Forfinski-Sarko\\LiDOG\\LiDOG_noaa-rsd\\support_files",
           "workspaceFactory" : "Shapefile",
           "dataset" : "Source_Dem_Extents_TEMPLATE.shp",
           "datasetType" : "esriDTFeatureClass"
@@ -269,17 +269,18 @@
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
+                "name" : "Group 1",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 1,
+                "width" : 0.69999999999999996,
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
                     0,
-                    112,
-                    255,
+                    77,
+                    168,
                     100
                   ]
                 }
@@ -287,13 +288,14 @@
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
+                "name" : "Group 2",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
                     115,
                     223,
                     255,
-                    100
+                    35
                   ]
                 }
               }
@@ -302,7 +304,20 @@
         }
       },
       "scaleSymbols" : true,
-      "snappable" : true
+      "snappable" : true,
+      "symbolLayerDrawing" : {
+        "type" : "CIMSymbolLayerDrawing",
+        "symbolLayers" : [
+          {
+            "type" : "CIMSymbolLayerIdentifier",
+            "symbolLayerName" : "Group 1"
+          },
+          {
+            "type" : "CIMSymbolLayerIdentifier",
+            "symbolLayerName" : "Group 2"
+          }
+        ]
+      }
     }
   ],
   "elevationSurfaces" : [

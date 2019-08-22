@@ -1,8 +1,11 @@
 """
-This tool processes RSD DEM data and creates an M_QUAL polygon with appropriate attribution
-Developed by Noel Dyer, PBC. Last Updated 12/6/2017
+This tool processes NOAA RSD and/or USACE JALBTCX DEM data 
+and creates an M_QUAL polygon with appropriate attribution.
 
-Modified by:
+Originally developed based on "LidarProcessor" tool created 
+by Noel Dyer.
+
+Author:
 Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
 nick.forfinski-sarkozi@noaa.gov
 """
@@ -457,22 +460,48 @@ class LiDOG:
         arcpy.CopyFeatures_management(src_dems_extent_name_temp, str(self.src_dems_extent_path))       
 
     def generate_summary_plot(self):
-        aprx_dir = self.out_dir / 'ArcGIS_aprx'
-        project_aprx = aprx_dir / (self.project_id + '.aprx')
+        arcpy.AddMessage('creating ArcGIS project with results...')
+        project_aprx = self.out_dir / (self.project_id + '.aprx')
 
         try:
             os.mkdir(str(aprx_dir))
         except Exception as e:
             pass
 
+        def buffer_extent(ext, buffer_factor):
+            dx = ext.XMax - ext.XMin
+            dy = ext.YMax - ext.YMin
+            buff_x = dx * buffer_factor
+            buff_y = dy * buffer_factor 
+            ext.XMin -= buff_x
+            ext.XMax += buff_x
+            ext.YMin -= buff_y
+            ext.YMax += buff_y
+            return ext, dx, dy
+        
+        def determine_layout_orientation(dx, dy):
+            if dy >= dx:
+                orientation = 'portrait'
+            else:
+                orientation = 'landscape'
+            return orientation
+
+        buffer_factor = 0.1
+        ext = arcpy.Describe(str(self.project_band4_cells_path)).extent
+        ext, dx, dy = buffer_extent(ext, buffer_factor)
+        orientation = determine_layout_orientation(dx, dy)
+
         lidog_dir = Path(os.path.dirname(os.path.realpath(__file__)))
         support_files_dir = lidog_dir.parent / 'support_files'
-        aprx_template_path = lidog_dir.parent / 'LiDOG_ProjectWideTemplate.aprx'
+
+        if orientation == 'portrait':
+            aprx_template_path = lidog_dir.parent / 'LiDOG_ProjectWideTemplate_PORTRAIT.aprx'
+        elif orientation == 'landscape':
+            aprx_template_path = lidog_dir.parent / 'LiDOG_ProjectWideTemplate_LANDSCAPE.aprx'
 
         lyr_cells_template_path = support_files_dir / 'Project_Band4_Cells_TEMPLATE.lyrx'
         lyr_extents_template_path = support_files_dir / 'Source_Dem_Extents_TEMPLATE.lyrx'
         lyr_mqual_template_path = support_files_dir / 'M_QUAL_TEMPLATE.lyrx'
-        lyr_all_band4_cells = support_files_dir / 'All_Band4_V5.lyrx'
 
         aprx = arcpy.mp.ArcGISProject(str(aprx_template_path))
         aprx_map = aprx.listMaps("Map")[0]
@@ -501,37 +530,30 @@ class LiDOG:
         lyrx_extents.save()
         lyrx_mqual.save()
 
-        aprx_map.addDataFromPath(lyrx_extents)
-        aprx_map.addDataFromPath(lyrx_mqual)
-        aprx_map.addDataFromPath(lyrx_cells)
-        aprx_map.addDataFromPath(str(lyr_all_band4_cells))
+        aprx_map.addLayer(lyrx_cells, 'BOTTOM')
+        aprx_map.addLayer(lyrx_mqual, 'BOTTOM')
+        aprx_map.addLayer(lyrx_extents, 'BOTTOM')
 
         lyrx_cells_lyr_basename = lyrx_cells.listLayers()[0].name
         lyr = aprx_map.listLayers(lyrx_cells_lyr_basename)[0]
         lyt = aprx.listLayouts("Layout")[0]
         mf = lyt.listElements("mapframe_element", "Map Frame")[0]
 
-        def buffer_extent(ext, buffer_factor):
-            dx = ext.XMax - ext.XMin
-            dy = ext.YMax - ext.YMin
-            buff_x = dx * buffer_factor
-            buff_y = dy * buffer_factor 
-            ext.XMin -= buff_x
-            ext.XMax += buff_x
-            ext.YMin -= buff_y
-            ext.YMax += buff_y
-            return ext
+        lyt.listElements("text_element", "Text")[0].text = 'Band-4 Product Cell Index Map\n{}'.format(self.project_id)
 
         ext = mf.getLayerExtent(lyr, False, True)
-        buffer_factor = 0.1
-        ext = buffer_extent(ext, percent_buff)
+        ext, __, __ = buffer_extent(ext, buffer_factor)
 
         mf.camera.setExtent(ext)
 
         aprx.saveACopy(str(project_aprx))
 
+        arcpy.AddMessage('generating summary plot pdf...')
         pdf_path = str(self.out_dir / '{}_Product_Cells_Overview.pdf'.format(self.project_id))
+
+        arcpy.AddMessage('generating summary plot png...')
         png_path = str(self.out_dir / '{}_Product_Cells_Overview.png'.format(self.project_id))
+
         lyt.exportToPDF(pdf_path, resolution=600)
         lyt.exportToPNG(png_path, resolution=600)
 
@@ -615,7 +637,7 @@ if __name__ == '__main__':
         cell.clip_pre_product_dem(prod_dem.pre_product_path)
 
     # create project-wide M_QUAL
-    arcpy.AddMessage('+' * 40)
+    arcpy.AddMessage('+' * 60)
     lidog.mqual_path = mqual.combine_mquals()
 
     # create project-wide band4 cells shp

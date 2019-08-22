@@ -22,7 +22,7 @@
       "expanded" : true,
       "layerType" : "Operational",
       "showLegends" : true,
-      "transparency" : 93,
+      "transparency" : 90,
       "visibility" : true,
       "displayCacheType" : "Permanent",
       "maxDisplayCacheAge" : 5,
@@ -38,7 +38,7 @@
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMStandardDataConnection",
-          "workspaceConnectionString" : "DATABASE=.",
+          "workspaceConnectionString" : "DATABASE=\\\\ngs-s-brunswick\\sdd\\Nick.Forfinski-Sarko\\LiDOG\\LiDOG_noaa-rsd\\support_files",
           "workspaceFactory" : "Shapefile",
           "dataset" : "Project_Band4_Cells_TEMPLATE.shp",
           "datasetType" : "esriDTFeatureClass"
