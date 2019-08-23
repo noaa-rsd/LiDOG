@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{11f1e240-cfb2-4a93-b84f-54f943086f0c}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>mask_feature.py</StartupFile>
+    <StartupFile>merge_geojson.py</StartupFile>
     <SearchPath>C:\Program Files\ArcGIS\Pro\Resources\ArcPy;C:\Program Files\ArcGIS\Pro\Resources\ArcToolBox\Scripts;C:\Program Files\ArcGIS\Pro\bin</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -25,7 +25,8 @@
     <InterpreterReference Include="Global|PythonCore|3.7" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="mask_feature.py">
+    <Compile Include="LiDOG.py" />
+    <Compile Include="merge_geojson.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
