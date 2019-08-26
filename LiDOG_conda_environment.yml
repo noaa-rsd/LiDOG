@@ -1,4 +1,4 @@
-name: LiDOG_Arc24
+name: LiDOG_
 channels:
   - esri
   - conda-forge

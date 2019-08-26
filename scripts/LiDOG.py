@@ -3,7 +3,7 @@ This tool processes NOAA RSD and/or USACE JALBTCX DEM data
 and creates an M_QUAL polygon with appropriate attribution.
 
 Originally developed based on "LidarProcessor" tool created 
-by Noel Dyer.
+by Noel Dyer, with NOAA Marine Charting Division.
 
 Author:
 Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
@@ -11,7 +11,6 @@ nick.forfinski-sarkozi@noaa.gov
 """
 
 import arcpy
-import re
 import xml.etree.ElementTree as ET
 from arcpy.sa import *
 import os
@@ -21,15 +20,15 @@ from pathlib import Path
 import rasterio
 from rasterio.mask import mask
 from shapely.geometry import shape, GeometryCollection
+import shapely.geometry
 from shapely.ops import transform
+import shapely.ops
 from functools import partial
 import pyproj
-from rasterio.io import MemoryFile 
 from rasterio import features
 from rasterio.enums import Resampling
 from rasterio import Affine
 import numpy as np
-import time
 
 
 class SourceDem:
@@ -56,7 +55,7 @@ class SourceDem:
             data = r.read_masks(1, out_shape=(r.height // 10, r.width // 10), 
                                 resampling=Resampling.average)
 
-        # adjust transform after raster resampling
+        # adjust transform (i.e., raster georeferencing) after raster resampling
         transform = Affine(t.a * 10, t.b, t.c, t.d, t.e * 10, t.f)
         data = np.ma.array(data, mask=(data == 0))
         mask = features.shapes(data, mask=None, transform=transform)
@@ -389,7 +388,7 @@ class Mqual:
         self.cells = None
         self.proj_dir = lidog.out_dir
 
-    def combine_mquals(self):
+    def combine_mquals_DEPRACATED(self):
         arcpy.AddMessage('merging cell M-QUALs to create project-wide M_QUAL...')
         if len(self.mquals) > 1:
             temp_mqual = r'in_memory\temp_mqual_shp'
@@ -409,6 +408,36 @@ class Mqual:
                                                         self.project_mqual_name)
 
         return self.project_mqual_path
+
+    def combine_mquals(self):
+        geojsons = self.proj_dir.rglob('*_mqual.geojson')
+        mqual_polys = None
+
+        for i, g in enumerate(list(geojsons)):
+            with open(g) as f:
+                try:
+                    with open(g, 'r') as j:
+                        mqual = json.load(j)['features']
+
+                    gc = [shape(poly["geometry"]).buffer(0) for poly in mqual]
+
+                    if i == 0:
+                        mqual_polys = gc
+                    else:
+                        mqual_polys = mqual_polys + gc
+                except Exception as e:
+                    arcpy.AddMessage(e)
+
+        print('merging {} shapely polygons to create project M_QUAL...'.format(len(mqual_polys)))
+        merged_mqual = shapely.ops.cascaded_union(mqual_polys)
+
+        print('copying features to shapefile...')
+        arcpy.CreateFeatureclass_management(self.proj_dir, self.project_mqual_name, 'POLYGON',
+                                            str(g).replace('.geojson', '.shp'), 
+                                            spatial_reference=self.spatial_ref)
+        mquals = arcpy.da.InsertCursor(self.project_mqual_path, ['SHAPE@WKT'] + list(self.fields.keys()))
+        mquals.insertRow([merged_mqual.to_wkt()] + list(self.fields.values()))
+        del mquals
 
 
 class LiDOG:
@@ -558,12 +587,9 @@ class LiDOG:
 
         aprx.saveACopy(str(project_aprx))
 
-        arcpy.AddMessage('generating summary plot pdf...')
+        arcpy.AddMessage('generating product-cell index map (pdf & png)...')
         pdf_path = str(self.out_dir / '{}_Product_Cells_Index_Map.pdf'.format(self.project_id))
-
-        arcpy.AddMessage('generating summary plot png...')
         png_path = str(self.out_dir / '{}_Product_Cells_Index_Map.png'.format(self.project_id))
-
         lyt.exportToPDF(pdf_path, resolution=600)
         lyt.exportToPNG(png_path, resolution=600)
 

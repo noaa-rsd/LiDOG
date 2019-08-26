@@ -22,7 +22,6 @@
       "expanded" : true,
       "layerType" : "Operational",
       "showLegends" : true,
-      "transparency" : 90,
       "visibility" : true,
       "displayCacheType" : "Permanent",
       "maxDisplayCacheAge" : 5,
@@ -61,6 +60,7 @@
             "avoidPolygonHoles" : true,
             "canOverrunFeature" : true,
             "canPlaceLabelOutsidePolygon" : true,
+            "canReduceFontSize" : true,
             "canRemoveOverlappingLabel" : true,
             "canStackLabel" : true,
             "connectionType" : "Unambiguous",
@@ -69,6 +69,7 @@
             "contourLadderType" : "Straight",
             "contourMaximumAngle" : 90,
             "enableConnection" : true,
+            "enablePolygonFixedPosition" : true,
             "featureWeight" : 0,
             "fontHeightReductionLimit" : 4,
             "fontHeightReductionStep" : 0.5,
@@ -155,10 +156,10 @@
             "secondaryOffset" : 100,
             "strategyPriorities" : {
               "type" : "CIMMaplexStrategyPriorities",
-              "stacking" : 1,
-              "overrun" : 2,
-              "fontCompression" : 3,
-              "fontReduction" : 4,
+              "stacking" : 2,
+              "overrun" : 3,
+              "fontCompression" : 4,
+              "fontReduction" : 1,
               "abbreviation" : 5
             },
             "thinningDistanceUnit" : "Point",
@@ -220,6 +221,24 @@
               "fontStyleName" : "Regular",
               "fontType" : "Unspecified",
               "haloSize" : 1,
+              "haloSymbol" : {
+                "type" : "CIMPolygonSymbol",
+                "symbolLayers" : [
+                  {
+                    "type" : "CIMSolidFill",
+                    "enable" : true,
+                    "color" : {
+                      "type" : "CIMRGBColor",
+                      "values" : [
+                        255,
+                        255,
+                        255,
+                        100
+                      ]
+                    }
+                  }
+                ]
+              },
               "height" : 10,
               "hinting" : "Default",
               "horizontalAlignment" : "Left",
@@ -236,14 +255,21 @@
                     "color" : {
                       "type" : "CIMRGBColor",
                       "values" : [
+                        168,
                         0,
-                        0,
-                        0,
+                        132,
                         100
                       ]
                     }
                   }
                 ]
+              },
+              "symbol3DProperties" : {
+                "type" : "CIM3DSymbolProperties",
+                "dominantSizeAxis3D" : "Z",
+                "rotationOrder3D" : "YXZ",
+                "scaleZ" : 1,
+                "scaleY" : 1
               },
               "textCase" : "Normal",
               "textDirection" : "LTR",
@@ -258,6 +284,7 @@
           "iD" : -1
         }
       ],
+      "labelVisibility" : true,
       "renderer" : {
         "type" : "CIMSimpleRenderer",
         "patch" : "Default",
@@ -273,13 +300,13 @@
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 0.69999999999999996,
+                "width" : 2,
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    110,
-                    110,
-                    110,
+                    168,
+                    0,
+                    132,
                     100
                   ]
                 }
@@ -293,7 +320,7 @@
                     168,
                     0,
                     132,
-                    100
+                    15
                   ]
                 }
               }
