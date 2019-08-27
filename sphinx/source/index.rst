@@ -20,6 +20,7 @@ Band-4 Cell Deliverables
 .. toctree::
     :maxdepth: 1
     
+    Installation
     Gui
     Workflow
     Deliverables

@@ -79,6 +79,7 @@
             
             
               <ul>
+<li class="toctree-l1"><a class="reference internal" href="../Installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Gui.html">GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Workflow.html">Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Deliverables.html">Deliverables</a></li>
@@ -146,34 +147,41 @@
             
   <h1>Source code for LiDOG</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This tool processes RSD DEM data and creates an M_QUAL polygon with appropriate attribution</span>
-<span class="sd">Developed by Noel Dyer, PBC. Last Updated 12/6/2017</span>
+<span class="sd">This tool processes NOAA RSD and/or USACE JALBTCX DEM data </span>
+<span class="sd">and creates an M_QUAL polygon with appropriate attribution.</span>
 
-<span class="sd">Modified by:</span>
+<span class="sd">Originally developed based on &quot;LidarProcessor&quot; tool created </span>
+<span class="sd">by Noel Dyer, with NOAA Marine Charting Division.</span>
+
+<span class="sd">Author:</span>
 <span class="sd">Nick Forfinski-Sarkozi, NOAA Remote Sensing Division</span>
 <span class="sd">nick.forfinski-sarkozi@noaa.gov</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">arcpy</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">ET</span>
-<span class="kn">from</span> <span class="nn">arcpy.sa</span> <span class="k">import</span> <span class="o">*</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">ET</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
-<span class="kn">import</span> <span class="nn">rasterio</span>
-<span class="kn">from</span> <span class="nn">rasterio.mask</span> <span class="k">import</span> <span class="n">mask</span>
-<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="k">import</span> <span class="n">shape</span><span class="p">,</span> <span class="n">GeometryCollection</span>
-<span class="kn">from</span> <span class="nn">shapely.ops</span> <span class="k">import</span> <span class="n">transform</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+
+<span class="kn">import</span> <span class="nn">arcpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">arcpy.sa</span> <span class="k">import</span> <span class="o">*</span>
 <span class="kn">import</span> <span class="nn">pyproj</span>
-<span class="kn">from</span> <span class="nn">rasterio.io</span> <span class="k">import</span> <span class="n">MemoryFile</span> 
+
+<span class="kn">from</span> <span class="nn">rasterio.mask</span> <span class="k">import</span> <span class="n">mask</span>
 <span class="kn">from</span> <span class="nn">rasterio</span> <span class="k">import</span> <span class="n">features</span>
 <span class="kn">from</span> <span class="nn">rasterio.enums</span> <span class="k">import</span> <span class="n">Resampling</span>
 <span class="kn">from</span> <span class="nn">rasterio</span> <span class="k">import</span> <span class="n">Affine</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">rasterio</span>
+
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="k">import</span> <span class="n">shape</span><span class="p">,</span> <span class="n">GeometryCollection</span>
+<span class="kn">from</span> <span class="nn">shapely.ops</span> <span class="k">import</span> <span class="n">transform</span>
+<span class="kn">import</span> <span class="nn">shapely.ops</span>
+<span class="kn">import</span> <span class="nn">shapely.geometry</span>
+
 
 
 <div class="viewcode-block" id="SourceDem"><a class="viewcode-back" href="../LiDOG.html#LiDOG.SourceDem">[docs]</a><span class="k">class</span> <span class="nc">SourceDem</span><span class="p">:</span>
@@ -185,8 +193,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">basename</span> <span class="o">+</span> <span class="s1">&#39;.tif&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">agg_factor</span> <span class="o">=</span> <span class="mi">5</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">out_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj_support_dir</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">project_support_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">band4_cells</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="c1">#self.raster = arcpy.sa.Raster(str(self.path))</span>
 
 <div class="viewcode-block" id="SourceDem.aggregate"><a class="viewcode-back" href="../LiDOG.html#LiDOG.SourceDem.aggregate">[docs]</a>    <span class="k">def</span> <span class="nf">aggregate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mosaic_path</span><span class="p">):</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;Aggregating mosaicked source DEM to product-DEM resolution...&#39;</span><span class="p">)</span>
@@ -200,7 +208,7 @@
             <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read_masks</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">10</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">width</span> <span class="o">//</span> <span class="mi">10</span><span class="p">),</span> 
                                 <span class="n">resampling</span><span class="o">=</span><span class="n">Resampling</span><span class="o">.</span><span class="n">average</span><span class="p">)</span>
 
-        <span class="c1"># adjust transform after raster resampling</span>
+        <span class="c1"># adjust transform (i.e., raster georeferencing) after raster resampling</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">Affine</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">a</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">c</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">d</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">e</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">f</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">data</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shapes</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
@@ -218,9 +226,9 @@
 
 <div class="viewcode-block" id="SourceDem.extract_band4_cells"><a class="viewcode-back" href="../LiDOG.html#LiDOG.SourceDem.extract_band4_cells">[docs]</a>    <span class="k">def</span> <span class="nf">extract_band4_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">band4_cells_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span> <span class="o">/</span> <span class="s1">&#39;Source_DEM_Band4_Cells&#39;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">basename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">band4_cells_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_support_dir</span> <span class="o">/</span> <span class="s1">&#39;Source_DEM_Band4_Cells&#39;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">band4_cells_dir</span><span class="p">))</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">band4_cells_dir</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -231,11 +239,6 @@
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> coverage intersects </span><span class="si">{}</span><span class="s1"> band-4 cells&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">num_cells</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">band4_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">band4_cells_dir</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basename</span> <span class="o">+</span> <span class="s1">&#39;_BAND4_cells.shp&#39;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">band4_cells_dir</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">pass</span>
-
         <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="s1">&#39;band4&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">band4_cells</span><span class="p">))</span>
         
         <span class="n">band4_cells</span> <span class="o">=</span> <span class="p">[]</span>
@@ -250,13 +253,14 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agg_raster</span><span class="p">,</span> <span class="n">cell</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">product_cell_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pre_product_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span> <span class="o">+</span> <span class="s1">&#39;_5m_DEM.tif&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_product_path</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">cell_support_dir</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span> <span class="o">+</span> <span class="s1">&#39;_preliminary_5m_DEM.tif&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">raster</span> <span class="o">=</span> <span class="n">agg_raster</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">raster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_product_path</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
 
 <div class="viewcode-block" id="ProductDem.mask_land"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductDem.mask_land">[docs]</a>    <span class="k">def</span> <span class="nf">mask_land</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">query_str</span> <span class="o">=</span> <span class="s1">&#39;VALUE &gt;= 0 OR VALUE &lt;= </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_depth</span><span class="p">)</span>
+        <span class="c1">#query_str = &#39;VALUE &gt;= 0&#39;</span>
         <span class="n">agg_dem_water</span> <span class="o">=</span> <span class="n">SetNull</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raster</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raster</span><span class="p">,</span> <span class="n">query_str</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">agg_dem_water</span></div>
 
@@ -269,13 +273,15 @@
 <div class="viewcode-block" id="ProductCell"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell">[docs]</a><span class="k">class</span> <span class="nc">ProductCell</span><span class="p">:</span>
 
     <span class="n">band4_shp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;../support_files/All_Band4_V5.shp&#39;</span><span class="p">)</span>
+    <span class="n">src_dems_template_shp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;../support_files/src_dem_extent_shp_template.shp&#39;</span><span class="p">)</span>
     <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SHAPE@&#39;</span><span class="p">,</span> <span class="s1">&#39;CellName&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">lidog</span><span class="p">,</span> <span class="n">mqual</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">geom</span> <span class="o">=</span> <span class="n">cell</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj_id</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">out_dir</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_ProductCell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mqual_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mqual_path</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mqual_in_memory</span> <span class="o">=</span> <span class="kc">None</span>
@@ -286,16 +292,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">buffer_meters</span> <span class="o">=</span> <span class="mi">50</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">denoise_threshold</span> <span class="o">=</span> <span class="mi">1200</span>  <span class="c1"># square meters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_cell_dir</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">clipped_dem_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="s1">&#39;source_dems&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extent_fc_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_extent_fc</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buffer_fc_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_support_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_support_files&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clipped_dem_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_support_dir</span> <span class="o">/</span> <span class="s1">&#39;source_dems&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_support_dir</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clipped_dem_dir</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">pass</span>
 
-        <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extent_fc_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_extent_fc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer_fc_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ProductCell.create_mqual"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell.create_mqual">[docs]</a>    <span class="k">def</span> <span class="nf">create_mqual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generalized_coverage</span><span class="p">):</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;generating M_QUAL from generalized water coverage...&#39;</span><span class="p">)</span>
@@ -304,7 +315,7 @@
         <span class="n">polys_dissolved</span> <span class="o">=</span> <span class="s1">&#39;in_memory\DissolvedFC&#39;</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">Dissolve_management</span><span class="p">(</span><span class="n">dem_polys</span><span class="p">,</span> <span class="n">polys_dissolved</span><span class="p">,</span> <span class="n">multi_part</span><span class="o">=</span><span class="s1">&#39;SINGLE_PART&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">mqual_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_M_QUAL.shp&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mqual_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">_mqual.shp&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mqual_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mqual_name</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mqual_in_memory</span> <span class="o">=</span><span class="s1">&#39;in_memory\pre_mqual_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -339,7 +350,7 @@
             <span class="k">return</span> <span class="n">cell_path</span></div>
 
 <div class="viewcode-block" id="ProductCell.make_extent_fc"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell.make_extent_fc">[docs]</a>    <span class="k">def</span> <span class="nf">make_extent_fc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">extent_fc_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_CellOutline.shp&#39;</span><span class="p">)</span>
+        <span class="n">extent_fc_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_support_dir</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_CellOutline.shp&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">extent_fc_path</span><span class="p">)):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geom</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">extent_fc_path</span><span class="p">))</span>
@@ -371,7 +382,10 @@
                                            <span class="n">pixel_type</span><span class="o">=</span><span class="s1">&#39;32_BIT_FLOAT&#39;</span><span class="p">,</span> <span class="n">number_of_bands</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
                                            <span class="n">mosaic_method</span><span class="o">=</span><span class="s1">&#39;MINIMUM&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="s1">&#39;in_memory\</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mosaic_name</span><span class="p">)</span></div>
+        <span class="n">mosaic_path</span> <span class="o">=</span> <span class="s1">&#39;in_memory\</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mosaic_name</span><span class="p">)</span>
+        <span class="n">mosaic_resolution</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Describe</span><span class="p">(</span><span class="n">mosaic_path</span><span class="p">)</span><span class="o">.</span><span class="n">meancellwidth</span>
+
+        <span class="k">return</span> <span class="n">mosaic_path</span><span class="p">,</span> <span class="n">mosaic_resolution</span></div>
 
 <div class="viewcode-block" id="ProductCell.get_cell_geometry"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell.get_cell_geometry">[docs]</a>    <span class="k">def</span> <span class="nf">get_cell_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">geojson_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extent_fc_path</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.shp&#39;</span><span class="p">,</span> <span class="s1">&#39;.geojson&#39;</span><span class="p">)</span>
@@ -391,28 +405,29 @@
 
 <div class="viewcode-block" id="ProductCell.mask_dem"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell.mask_dem">[docs]</a>    <span class="k">def</span> <span class="nf">mask_dem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dem_path</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">masked_dem_path</span><span class="p">):</span>
         <span class="n">src_r</span> <span class="o">=</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dem_path</span><span class="p">)</span>
-        <span class="n">project</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
-            <span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
-            <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="s1">&#39;epsg:4326&#39;</span><span class="p">),</span>
-            <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="s1">&#39;epsg:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">src_r</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_epsg</span><span class="p">())))</span>
 
-        <span class="n">geom_utm</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom_utm</span><span class="p">,</span> <span class="n">GeometryCollection</span><span class="p">):</span>
-            <span class="n">geom</span> <span class="o">=</span> <span class="n">geom_utm</span>
-        <span class="k">else</span><span class="p">:</span>  <span class="c1"># individual shapely polygons</span>
-            <span class="n">geom</span> <span class="o">=</span> <span class="p">[</span><span class="n">geom_utm</span><span class="p">]</span>
-        <span class="n">out_r</span><span class="p">,</span> <span class="n">out_transform</span> <span class="o">=</span> <span class="n">mask</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">src_r</span><span class="p">,</span> <span class="n">shapes</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span> <span class="n">GeometryCollection</span><span class="p">):</span>  <span class="c1"># only tranform cell boundary, not mqual</span>
+            <span class="n">project</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+                <span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+                <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="s1">&#39;epsg:4326&#39;</span><span class="p">),</span>
+                <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="s1">&#39;epsg:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">src_r</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_epsg</span><span class="p">())))</span>
+            <span class="n">geom</span> <span class="o">=</span> <span class="p">[</span><span class="n">transform</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="n">geom</span><span class="p">)]</span>
 
-        <span class="n">out_meta</span> <span class="o">=</span> <span class="n">src_r</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">out_meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;driver&#39;</span><span class="p">:</span> <span class="s1">&#39;GTiff&#39;</span><span class="p">,</span>
-                         <span class="s1">&#39;height&#39;</span><span class="p">:</span> <span class="n">out_r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                         <span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="n">out_r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
-                         <span class="s1">&#39;transform&#39;</span><span class="p">:</span> <span class="n">out_transform</span><span class="p">,</span>
-                         <span class="s1">&#39;crs&#39;</span><span class="p">:</span> <span class="n">src_r</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_proj4</span><span class="p">(),</span>
-                         <span class="s1">&#39;compress&#39;</span><span class="p">:</span> <span class="s1">&#39;lzw&#39;</span><span class="p">})</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">out_r</span><span class="p">,</span> <span class="n">out_transform</span> <span class="o">=</span> <span class="n">mask</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">src_r</span><span class="p">,</span> <span class="n">shapes</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">out_meta</span> <span class="o">=</span> <span class="n">src_r</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">out_meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;driver&#39;</span><span class="p">:</span> <span class="s1">&#39;GTiff&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;height&#39;</span><span class="p">:</span> <span class="n">out_r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                             <span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="n">out_r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                             <span class="s1">&#39;transform&#39;</span><span class="p">:</span> <span class="n">out_transform</span><span class="p">,</span>
+                             <span class="s1">&#39;crs&#39;</span><span class="p">:</span> <span class="n">src_r</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_proj4</span><span class="p">(),</span>
+                             <span class="s1">&#39;compress&#39;</span><span class="p">:</span> <span class="s1">&#39;lzw&#39;</span><span class="p">})</span>
 
-        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">masked_dem_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">out_meta</span><span class="p">)</span> <span class="k">as</span> <span class="n">masked_dem</span><span class="p">:</span>
-            <span class="n">masked_dem</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out_r</span><span class="p">)</span></div>
+            <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">masked_dem_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">out_meta</span><span class="p">)</span> <span class="k">as</span> <span class="n">masked_dem</span><span class="p">:</span>
+                <span class="n">masked_dem</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out_r</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ProductCell.clip_src_dem"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell.clip_src_dem">[docs]</a>    <span class="k">def</span> <span class="nf">clip_src_dem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dem</span><span class="p">):</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;clipping </span><span class="si">{}</span><span class="s1"> with </span><span class="si">{}</span><span class="s1"> cell buffer...&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dem</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
@@ -423,7 +438,8 @@
 
 <div class="viewcode-block" id="ProductCell.clip_pre_product_dem"><a class="viewcode-back" href="../LiDOG.html#LiDOG.ProductCell.clip_pre_product_dem">[docs]</a>    <span class="k">def</span> <span class="nf">clip_pre_product_dem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dem</span><span class="p">):</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;clipping preliminary product DEM with M_QUAL...&#39;</span><span class="p">)</span>
-        <span class="n">product_dem_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span> <span class="o">+</span> <span class="s1">&#39;_5m_DEM_M_QUAL.tif&#39;</span><span class="p">)</span>
+        <span class="n">product_dem_name</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">product_cell_name</span><span class="p">,</span> <span class="s1">&#39;mllw&#39;</span><span class="p">,</span> <span class="s1">&#39;5m&#39;</span><span class="p">,</span> <span class="s1">&#39;sb&#39;</span><span class="p">,</span> <span class="s1">&#39;dem&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;.tif&#39;</span>
+        <span class="n">product_dem_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cell_path</span> <span class="o">/</span> <span class="n">product_dem_name</span>
         <span class="n">mqual_geom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mqual_geometry</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mask_dem</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">mqual_geom</span><span class="p">,</span> <span class="n">product_dem_path</span><span class="p">)</span></div></div>
 
@@ -445,9 +461,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bounding_coordinates</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;NOAA </span><span class="si">{}</span><span class="s1">-Band4 Topobathy LiDAR Processing&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span><span class="p">),</span>
             <span class="s1">&#39;begdate&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sursta</span><span class="p">),</span>
             <span class="s1">&#39;enddate&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surend</span><span class="p">),</span>
-            <span class="s1">&#39;proj_id&#39;</span><span class="p">:</span> <span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>  <span class="c1"># TODO: add to title tag </span>
+            <span class="s1">&#39;proj_id&#39;</span><span class="p">:</span> <span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>
             <span class="s1">&#39;longcm&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">central_meridian</span><span class="p">,</span>
             <span class="s1">&#39;utmzone&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">utm_zone</span><span class="p">,</span>
             <span class="s1">&#39;procdesc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_library</span><span class="p">[</span><span class="s1">&#39;procdesc&#39;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">data_src</span><span class="p">],</span>
@@ -502,7 +519,7 @@
 <div class="viewcode-block" id="Mqual"><a class="viewcode-back" href="../LiDOG.html#LiDOG.Mqual">[docs]</a><span class="k">class</span> <span class="nc">Mqual</span><span class="p">:</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lidog</span><span class="p">,</span> <span class="n">meta</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_M_QUAL.shp&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_mqual.shp&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">project_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_path</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dem_mqual_path</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">([</span>
@@ -520,29 +537,37 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sursta</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">sursta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surend</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">surend</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spatial_ref</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">spatial_ref</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mqual_schema_rpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;../support_files/M_QUAL.shp&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mquals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mqual_schema_rpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;../support_files/M_QUAL_TEMPLATE.shp&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span> <span class="o">=</span> <span class="n">lidog</span><span class="o">.</span><span class="n">out_dir</span>
 
 <div class="viewcode-block" id="Mqual.combine_mquals"><a class="viewcode-back" href="../LiDOG.html#LiDOG.Mqual.combine_mquals">[docs]</a>    <span class="k">def</span> <span class="nf">combine_mquals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;merging cell M-QUALs to create project-wide M_QUAL...&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mquals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">temp_mqual</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;in_memory\temp_mqual_shp&#39;</span>
-            <span class="n">current_mqual</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;in_memory\current_mqual&#39;</span>
-            <span class="n">arcpy</span><span class="o">.</span><span class="n">Union_analysis</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mquals</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> 
-                                  <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mquals</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span> 
-                                 <span class="n">current_mqual</span><span class="p">)</span>
+        <span class="n">geojsons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">&#39;*_mqual.geojson&#39;</span><span class="p">)</span>
+        <span class="n">mqual_polys</span> <span class="o">=</span> <span class="kc">None</span>
 
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mquals</span><span class="p">)):</span>
-                <span class="n">arcpy</span><span class="o">.</span><span class="n">Union_analysis</span><span class="p">([</span><span class="n">current_mqual</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mquals</span><span class="p">[</span><span class="n">i</span><span class="p">])],</span> <span class="n">temp_mqual</span><span class="p">)</span>
-                <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="n">temp_mqual</span><span class="p">,</span> <span class="n">current_mqual</span><span class="p">)</span>
-            <span class="n">arcpy</span><span class="o">.</span><span class="n">Dissolve_management</span><span class="p">(</span><span class="n">current_mqual</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_path</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">geojsons</span><span class="p">)):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">j</span><span class="p">:</span>
+                        <span class="n">mqual</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">j</span><span class="p">)[</span><span class="s1">&#39;features&#39;</span><span class="p">]</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">arcpy</span><span class="o">.</span><span class="n">FeatureClassToFeatureClass_conversion</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mquals</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> 
-                                                        <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span><span class="p">),</span> 
-                                                        <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_name</span><span class="p">)</span>
+                    <span class="n">gc</span> <span class="o">=</span> <span class="p">[</span><span class="n">shape</span><span class="p">(</span><span class="n">poly</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">mqual</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">mqual_polys</span> <span class="o">=</span> <span class="n">gc</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">mqual_polys</span> <span class="o">=</span> <span class="n">mqual_polys</span> <span class="o">+</span> <span class="n">gc</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="n">merged_mqual</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cascaded_union</span><span class="p">(</span><span class="n">mqual_polys</span><span class="p">)</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateFeatureclass_management</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_name</span><span class="p">,</span> <span class="s1">&#39;POLYGON&#39;</span><span class="p">,</span>
+                                            <span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.geojson&#39;</span><span class="p">,</span> <span class="s1">&#39;.shp&#39;</span><span class="p">),</span> 
+                                            <span class="n">spatial_reference</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_ref</span><span class="p">)</span>
+        <span class="n">mquals</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">InsertCursor</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_path</span><span class="p">),</span> <span class="p">[</span><span class="s1">&#39;SHAPE@WKT&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">mquals</span><span class="o">.</span><span class="n">insertRow</span><span class="p">([</span><span class="n">merged_mqual</span><span class="o">.</span><span class="n">to_wkt</span><span class="p">()]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">del</span> <span class="n">mquals</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_mqual_path</span></div></div>
 
@@ -561,16 +586,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_dems</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_dems</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">product_cells</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_shp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s1">&#39;Source_DEM_Band4_Cells&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_dems_extent_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mqual_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_support_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_support_files&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_shp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_support_dir</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_shp_dir</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">pass</span>
 
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_support_dir</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
+
 <div class="viewcode-block" id="LiDOG.create_project_band4_cells_shp"><a class="viewcode-back" href="../LiDOG.html#LiDOG.LiDOG.create_project_band4_cells_shp">[docs]</a>    <span class="k">def</span> <span class="nf">create_project_band4_cells_shp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">project_band4_cells_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span> <span class="o">+</span> <span class="s1">&#39;_Band4_Cells.shp&#39;</span>
-        <span class="n">project_band4_cells_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_shp_dir</span> <span class="o">/</span> <span class="n">project_band4_cells_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_shp_dir</span> <span class="o">/</span> <span class="n">project_band4_cells_name</span>
         <span class="n">proj_band4_shp_temp</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;in_memory\band4&#39;</span>
         <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateFeatureclass_management</span><span class="p">(</span><span class="s1">&#39;in_memory&#39;</span><span class="p">,</span> <span class="s1">&#39;band4&#39;</span><span class="p">,</span> <span class="s1">&#39;POLYGON&#39;</span><span class="p">,</span>
                                             <span class="nb">str</span><span class="p">(</span><span class="n">ProductCell</span><span class="o">.</span><span class="n">band4_shp</span><span class="p">),</span>
@@ -579,44 +613,142 @@
         <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_cells</span><span class="o">.</span><span class="n">values</span><span class="p">():</span> 
             <span class="n">band4_cells</span><span class="o">.</span><span class="n">insertRow</span><span class="p">([</span><span class="n">cell</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">cell</span><span class="o">.</span><span class="n">geom</span><span class="p">])</span>
         <span class="k">del</span> <span class="n">band4_cells</span>
-        <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="n">proj_band4_shp_temp</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">project_band4_cells_path</span><span class="p">))</span></div>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="n">proj_band4_shp_temp</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="LiDOG.merge_dem_band4_coverages_DEPRACATE"><a class="viewcode-back" href="../LiDOG.html#LiDOG.LiDOG.merge_dem_band4_coverages_DEPRACATE">[docs]</a>    <span class="k">def</span> <span class="nf">merge_dem_band4_coverages_DEPRACATE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">project_band4_cells_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span> <span class="o">+</span> <span class="s1">&#39;_Band4_Cells.shp&#39;</span>
-        <span class="n">project_band4_cells_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="n">project_band4_cells_name</span>
+<div class="viewcode-block" id="LiDOG.create_source_dems_extents"><a class="viewcode-back" href="../LiDOG.html#LiDOG.LiDOG.create_source_dems_extents">[docs]</a>    <span class="k">def</span> <span class="nf">create_source_dems_extents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">src_dems_extent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span> <span class="o">+</span> <span class="s1">&#39;_Source_Dem_Extents.shp&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_dems_extent_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_support_dir</span> <span class="o">/</span> <span class="n">src_dems_extent_name</span>
+        <span class="n">src_dems_extent_name_temp</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;in_memory\extents&#39;</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateFeatureclass_management</span><span class="p">(</span><span class="s1">&#39;in_memory&#39;</span><span class="p">,</span> <span class="s1">&#39;extents&#39;</span><span class="p">,</span> <span class="s1">&#39;POLYGON&#39;</span><span class="p">,</span>
+                                            <span class="nb">str</span><span class="p">(</span><span class="n">ProductCell</span><span class="o">.</span><span class="n">src_dems_template_shp</span><span class="p">),</span>
+                                            <span class="n">spatial_reference</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_ref</span><span class="p">)</span>
+        <span class="n">src_dem_extents</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">InsertCursor</span><span class="p">(</span><span class="n">src_dems_extent_name_temp</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution&#39;</span><span class="p">,</span> <span class="s1">&#39;SHAPE@&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">dem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_dems</span><span class="p">:</span> 
+            <span class="n">desc</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Describe</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dem</span><span class="p">))</span>
+            <span class="n">dem_res</span> <span class="o">=</span> <span class="n">desc</span><span class="o">.</span><span class="n">meancellwidth</span>
+            <span class="n">src_dem_extents</span><span class="o">.</span><span class="n">insertRow</span><span class="p">([</span><span class="n">dem</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dem_res</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">extent</span><span class="o">.</span><span class="n">polygon</span><span class="p">])</span>
+        <span class="k">del</span> <span class="n">src_dem_extents</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="n">src_dems_extent_name_temp</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dems_extent_path</span><span class="p">))</span>       </div>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">temp_band4</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;in_memory\temp_band4_coverage_shp&#39;</span>
-            <span class="n">current_band4</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;in_memory\current_band4_coverage&#39;</span>
-            <span class="n">arcpy</span><span class="o">.</span><span class="n">Union_analysis</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> 
-                                  <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span> 
-                                 <span class="n">current_band4</span><span class="p">)</span>
+<div class="viewcode-block" id="LiDOG.generate_summary_plot"><a class="viewcode-back" href="../LiDOG.html#LiDOG.LiDOG.generate_summary_plot">[docs]</a>    <span class="k">def</span> <span class="nf">generate_summary_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;creating ArcGIS project with results...&#39;</span><span class="p">)</span>
+        <span class="n">project_aprx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_support_dir</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_id</span> <span class="o">+</span> <span class="s1">&#39;.aprx&#39;</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span><span class="p">)):</span>
-                <span class="n">arcpy</span><span class="o">.</span><span class="n">Union_analysis</span><span class="p">([</span><span class="n">current_band4</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span><span class="p">[</span><span class="n">i</span><span class="p">])],</span> <span class="n">temp_band4</span><span class="p">)</span>
-                <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="n">temp_band4</span><span class="p">,</span> <span class="n">current_band4</span><span class="p">)</span>
-            <span class="n">arcpy</span><span class="o">.</span><span class="n">CopyFeatures_management</span><span class="p">(</span><span class="n">current_band4</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">project_band4_cells_path</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">aprx_dir</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">arcpy</span><span class="o">.</span><span class="n">FeatureClassToFeatureClass_conversion</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dem_band4_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> 
-                                                        <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_dir</span><span class="p">),</span> 
-                                                        <span class="n">project_band4_cells_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="k">return</span> </div></div>
+        <span class="k">def</span> <span class="nf">buffer_extent</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">buffer_factor</span><span class="p">):</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">XMax</span> <span class="o">-</span> <span class="n">ext</span><span class="o">.</span><span class="n">XMin</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">YMax</span> <span class="o">-</span> <span class="n">ext</span><span class="o">.</span><span class="n">YMin</span>
+            <span class="n">buff_x</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">buffer_factor</span>
+            <span class="n">buff_y</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">buffer_factor</span> 
+            <span class="n">ext</span><span class="o">.</span><span class="n">XMin</span> <span class="o">-=</span> <span class="n">buff_x</span>
+            <span class="n">ext</span><span class="o">.</span><span class="n">XMax</span> <span class="o">+=</span> <span class="n">buff_x</span>
+            <span class="n">ext</span><span class="o">.</span><span class="n">YMin</span> <span class="o">-=</span> <span class="n">buff_y</span>
+            <span class="n">ext</span><span class="o">.</span><span class="n">YMax</span> <span class="o">+=</span> <span class="n">buff_y</span>
+            <span class="k">return</span> <span class="n">ext</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span>
+        
+        <span class="k">def</span> <span class="nf">determine_layout_orientation</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;=</span> <span class="n">dx</span><span class="p">:</span>
+                <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;portrait&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;landscape&#39;</span>
+            <span class="k">return</span> <span class="n">orientation</span>
+
+        <span class="n">buffer_factor</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Describe</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span><span class="p">))</span><span class="o">.</span><span class="n">extent</span>
+        <span class="n">ext</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">buffer_extent</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">buffer_factor</span><span class="p">)</span>
+        <span class="n">orientation</span> <span class="o">=</span> <span class="n">determine_layout_orientation</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
+
+        <span class="n">lidog_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+        <span class="n">support_files_dir</span> <span class="o">=</span> <span class="n">lidog_dir</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;support_files&#39;</span>
+
+        <span class="k">if</span> <span class="n">orientation</span> <span class="o">==</span> <span class="s1">&#39;portrait&#39;</span><span class="p">:</span>
+            <span class="n">aprx_template_path</span> <span class="o">=</span> <span class="n">lidog_dir</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;LiDOG_ProjectWideTemplate_PORTRAIT.aprx&#39;</span>
+        <span class="k">elif</span> <span class="n">orientation</span> <span class="o">==</span> <span class="s1">&#39;landscape&#39;</span><span class="p">:</span>
+            <span class="n">aprx_template_path</span> <span class="o">=</span> <span class="n">lidog_dir</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;LiDOG_ProjectWideTemplate_LANDSCAPE.aprx&#39;</span>
+
+        <span class="n">lyr_cells_template_path</span> <span class="o">=</span> <span class="n">support_files_dir</span> <span class="o">/</span> <span class="s1">&#39;Project_Band4_Cells_TEMPLATE.lyrx&#39;</span>
+        <span class="n">lyr_extents_template_path</span> <span class="o">=</span> <span class="n">support_files_dir</span> <span class="o">/</span> <span class="s1">&#39;Source_Dem_Extents_TEMPLATE.lyrx&#39;</span>
+        <span class="n">lyr_mqual_template_path</span> <span class="o">=</span> <span class="n">support_files_dir</span> <span class="o">/</span> <span class="s1">&#39;M_QUAL_TEMPLATE.lyrx&#39;</span>
+
+        <span class="n">aprx</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">ArcGISProject</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">aprx_template_path</span><span class="p">))</span>
+        <span class="n">aprx_map</span> <span class="o">=</span> <span class="n">aprx</span><span class="o">.</span><span class="n">listMaps</span><span class="p">(</span><span class="s2">&quot;Map&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="n">lyrx_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s1">&#39;.lyrx&#39;</span><span class="p">)</span>
+        <span class="n">lyrx_extents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_dems_extent_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dems_extent_path</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s1">&#39;.lyrx&#39;</span><span class="p">)</span>
+        <span class="n">lyrx_mqual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mqual_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mqual_path</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s1">&#39;.lyrx&#39;</span><span class="p">)</span>
+
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">SaveToLayerFile_management</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">MakeFeatureLayer_management</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_band4_cells_path</span><span class="p">)),</span> <span class="nb">str</span><span class="p">(</span><span class="n">lyrx_cells</span><span class="p">))</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">SaveToLayerFile_management</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">MakeFeatureLayer_management</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_dems_extent_path</span><span class="p">)),</span> <span class="nb">str</span><span class="p">(</span><span class="n">lyrx_extents</span><span class="p">))</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">SaveToLayerFile_management</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">MakeFeatureLayer_management</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mqual_path</span><span class="p">)),</span> <span class="nb">str</span><span class="p">(</span><span class="n">lyrx_mqual</span><span class="p">))</span>
+
+        <span class="n">lyr_cells_template</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">LayerFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lyr_cells_template_path</span><span class="p">))</span>
+        <span class="n">lyr_extents_template</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">LayerFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lyr_extents_template_path</span><span class="p">))</span>
+        <span class="n">lyr_mqual_template</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">LayerFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lyr_mqual_template_path</span><span class="p">))</span>
+
+        <span class="n">lyrx_cells</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">LayerFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lyrx_cells</span><span class="p">))</span>
+        <span class="n">lyrx_extents</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">LayerFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lyrx_extents</span><span class="p">))</span>
+        <span class="n">lyrx_mqual</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mp</span><span class="o">.</span><span class="n">LayerFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lyrx_mqual</span><span class="p">))</span>
+
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">ApplySymbologyFromLayer_management</span><span class="p">(</span><span class="n">lyrx_cells</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lyr_cells_template</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">ApplySymbologyFromLayer_management</span><span class="p">(</span><span class="n">lyrx_extents</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lyr_extents_template</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">ApplySymbologyFromLayer_management</span><span class="p">(</span><span class="n">lyrx_mqual</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lyr_mqual_template</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">lyrx_cells</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="n">lyrx_extents</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="n">lyrx_mqual</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="n">aprx_map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lyrx_cells</span><span class="p">,</span> <span class="s1">&#39;BOTTOM&#39;</span><span class="p">)</span>
+        <span class="n">aprx_map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lyrx_mqual</span><span class="p">,</span> <span class="s1">&#39;BOTTOM&#39;</span><span class="p">)</span>
+        <span class="n">aprx_map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lyrx_extents</span><span class="p">,</span> <span class="s1">&#39;BOTTOM&#39;</span><span class="p">)</span>
+
+        <span class="n">lyrx_cells_lyr_basename</span> <span class="o">=</span> <span class="n">lyrx_cells</span><span class="o">.</span><span class="n">listLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">lyr</span> <span class="o">=</span> <span class="n">aprx_map</span><span class="o">.</span><span class="n">listLayers</span><span class="p">(</span><span class="n">lyrx_cells_lyr_basename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">lyt</span> <span class="o">=</span> <span class="n">aprx</span><span class="o">.</span><span class="n">listLayouts</span><span class="p">(</span><span class="s2">&quot;Layout&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mf</span> <span class="o">=</span> <span class="n">lyt</span><span class="o">.</span><span class="n">listElements</span><span class="p">(</span><span class="s2">&quot;mapframe_element&quot;</span><span class="p">,</span> <span class="s2">&quot;Map Frame&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">lyt</span><span class="o">.</span><span class="n">listElements</span><span class="p">(</span><span class="s2">&quot;text_element&quot;</span><span class="p">,</span> <span class="s2">&quot;Text&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;Product Cell (Band 4) Index Map</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">)</span>
+
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">mf</span><span class="o">.</span><span class="n">getLayerExtent</span><span class="p">(</span><span class="n">lyr</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">ext</span><span class="p">,</span> <span class="n">__</span><span class="p">,</span> <span class="n">__</span> <span class="o">=</span> <span class="n">buffer_extent</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">buffer_factor</span><span class="p">)</span>
+
+        <span class="n">mf</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">setExtent</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+
+        <span class="n">aprx</span><span class="o">.</span><span class="n">saveACopy</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">project_aprx</span><span class="p">))</span>
+
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;generating product-cell index map (pdf &amp; png)...&#39;</span><span class="p">)</span>
+        <span class="n">pdf_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_Product_Cells_Index_Map.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">))</span>
+        <span class="n">png_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_Product_Cells_Index_Map.png&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">))</span>
+        <span class="n">lyt</span><span class="o">.</span><span class="n">exportToPDF</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
+        <span class="n">lyt</span><span class="o">.</span><span class="n">exportToPNG</span><span class="p">(</span><span class="n">png_path</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="set_env_vars"><a class="viewcode-back" href="../LiDOG.html#LiDOG.set_env_vars">[docs]</a><span class="k">def</span> <span class="nf">set_env_vars</span><span class="p">():</span>
+    <span class="n">user_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">)</span>
+
+    <span class="n">script_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_dir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;AppData&#39;</span><span class="p">,</span> <span class="s1">&#39;Local&#39;</span><span class="p">,</span> <span class="s1">&#39;Continuum&#39;</span><span class="p">,</span> 
+                                          <span class="s1">&#39;anaconda3&#39;</span><span class="p">,</span> <span class="s1">&#39;Scripts&#39;</span><span class="p">)</span>
+
+    <span class="n">gdal_data</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_dir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;AppData&#39;</span><span class="p">,</span> <span class="s1">&#39;Local&#39;</span><span class="p">,</span> <span class="s1">&#39;Continuum&#39;</span><span class="p">,</span> 
+                                        <span class="s1">&#39;anaconda3&#39;</span><span class="p">,</span> <span class="s1">&#39;envs&#39;</span><span class="p">,</span> <span class="s1">&#39;LiDOG&#39;</span><span class="p">,</span> 
+                                        <span class="s1">&#39;Library&#39;</span><span class="p">,</span> <span class="s1">&#39;share&#39;</span><span class="p">,</span> <span class="s1">&#39;gdal&#39;</span><span class="p">)</span>
+
+    <span class="n">proj_lib</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_dir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;AppData&#39;</span><span class="p">,</span> <span class="s1">&#39;Local&#39;</span><span class="p">,</span> <span class="s1">&#39;Continuum&#39;</span><span class="p">,</span> 
+                                       <span class="s1">&#39;anaconda3&#39;</span><span class="p">,</span> <span class="s1">&#39;envs&#39;</span><span class="p">,</span> <span class="s1">&#39;LiDOG&#39;</span><span class="p">,</span> 
+                                       <span class="s1">&#39;Library&#39;</span><span class="p">,</span> <span class="s1">&#39;share&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">script_path</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">script_path</span><span class="p">)</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;GDAL_DATA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gdal_data</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PROJ_LIB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">proj_lib</span><span class="p">)</span></div>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-
-    <span class="n">user_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">)</span>
-
-    <span class="c1">#script_path = Path(user_dir).joinpath(&#39;AppData&#39;, &#39;Local&#39;, &#39;Continuum&#39;, &#39;anaconda3&#39;, &#39;Scripts&#39;)</span>
-    <span class="c1">#gdal_data = Path(user_dir).joinpath(&#39;AppData&#39;, &#39;Local&#39;, &#39;Continuum&#39;, &#39;anaconda3&#39;, &#39;envs&#39;, &#39;LiDOG&#39;, &#39;Library&#39;, &#39;share&#39;, &#39;gdal&#39;)</span>
-    <span class="n">proj_lib</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_dir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;AppData&#39;</span><span class="p">,</span> <span class="s1">&#39;Local&#39;</span><span class="p">,</span> <span class="s1">&#39;Continuum&#39;</span><span class="p">,</span> <span class="s1">&#39;anaconda3&#39;</span><span class="p">,</span> 
-                                      <span class="s1">&#39;envs&#39;</span><span class="p">,</span> <span class="s1">&#39;LiDOG&#39;</span><span class="p">,</span> <span class="s1">&#39;Library&#39;</span><span class="p">,</span> <span class="s1">&#39;share&#39;</span><span class="p">)</span>
-
-    <span class="c1">#if script_path.name not in os.environ[&quot;PATH&quot;]:</span>
-    <span class="c1">#    os.environ[&quot;PATH&quot;] += os.pathsep + str(script_path)</span>
-    <span class="c1">#os.environ[&quot;GDAL_DATA&quot;] = str(gdal_data)</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PROJ_LIB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">proj_lib</span><span class="p">)</span>
+    <span class="n">set_env_vars</span><span class="p">()</span>
 
     <span class="n">lidog</span> <span class="o">=</span> <span class="n">LiDOG</span><span class="p">()</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">(</span><span class="n">lidog</span><span class="p">)</span>
@@ -649,32 +781,43 @@
             <span class="c1"># clip dem1 with cell buffer</span>
             <span class="n">lidog</span><span class="o">.</span><span class="n">product_cells</span><span class="p">[</span><span class="n">cell_name</span><span class="p">]</span><span class="o">.</span><span class="n">clip_src_dem</span><span class="p">(</span><span class="n">src_dem</span><span class="p">)</span>
         
+    <span class="c1"># create shapefile with source DEM extents</span>
+    <span class="n">lidog</span><span class="o">.</span><span class="n">create_source_dems_extents</span><span class="p">()</span>
+
     <span class="n">num_cells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">product_cells</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">cell_name</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">product_cells</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="mi">1</span><span class="p">):</span>     
         <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> cell </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> of </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="n">cell_name</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">num_cells</span><span class="p">))</span>
-        <span class="n">src_dem_mosaic_path</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">mosaic</span><span class="p">()</span>
-        <span class="n">agg_dem</span> <span class="o">=</span> <span class="n">src_dem</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">src_dem_mosaic_path</span><span class="p">)</span>
-        <span class="n">prod_dem</span> <span class="o">=</span> <span class="n">ProductDem</span><span class="p">(</span><span class="n">agg_dem</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+        <span class="n">src_dem_mosaic_path</span><span class="p">,</span> <span class="n">src_res</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">mosaic</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">src_res</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">product_source_dem</span> <span class="o">=</span> <span class="n">src_dem</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">src_dem_mosaic_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;source DEM resolution != 1m, not aggregating source DEM&#39;</span><span class="p">)</span>
+            <span class="n">product_source_dem</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">src_dem_mosaic_path</span><span class="p">))</span>
+        
+        <span class="n">prod_dem</span> <span class="o">=</span> <span class="n">ProductDem</span><span class="p">(</span><span class="n">product_source_dem</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
 
         <span class="c1"># create cell mqual</span>
         <span class="n">cell_mqual</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">create_mqual</span><span class="p">(</span><span class="n">prod_dem</span><span class="o">.</span><span class="n">generalize_water_coverage</span><span class="p">())</span>
-        <span class="n">mqual</span><span class="o">.</span><span class="n">mquals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cell_mqual</span><span class="p">)</span>
 
         <span class="c1"># clip pre product DEM with mqual</span>
         <span class="n">cell</span><span class="o">.</span><span class="n">clip_pre_product_dem</span><span class="p">(</span><span class="n">prod_dem</span><span class="o">.</span><span class="n">pre_product_path</span><span class="p">)</span>
 
     <span class="c1"># create project-wide M_QUAL</span>
-    <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;+&#39;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
-    <span class="n">project_mqual</span> <span class="o">=</span> <span class="n">mqual</span><span class="o">.</span><span class="n">combine_mquals</span><span class="p">()</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;+&#39;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="n">lidog</span><span class="o">.</span><span class="n">mqual_path</span> <span class="o">=</span> <span class="n">mqual</span><span class="o">.</span><span class="n">combine_mquals</span><span class="p">()</span>
 
     <span class="c1"># create project-wide band4 cells shp</span>
     <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;creating project-wide band4 cells shp...&#39;</span><span class="p">)</span>
     <span class="n">lidog</span><span class="o">.</span><span class="n">create_project_band4_cells_shp</span><span class="p">()</span>
 
+    <span class="c1"># export pdf of product cells overview</span>
+    <span class="n">lidog</span><span class="o">.</span><span class="n">generate_summary_plot</span><span class="p">()</span>
+    
     <span class="c1"># update metadata with project-wide M_QUAL extents</span>
     <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s1">&#39;exporting xml metatdata file...&#39;</span><span class="p">)</span>
     <span class="n">metadata</span><span class="o">.</span><span class="n">get_xml_template</span><span class="p">()</span>
-    <span class="n">metadata</span><span class="o">.</span><span class="n">update_metadata</span><span class="p">(</span><span class="n">project_mqual</span><span class="p">)</span>
+    <span class="n">metadata</span><span class="o">.</span><span class="n">update_metadata</span><span class="p">(</span><span class="n">lidog</span><span class="o">.</span><span class="n">mqual_path</span><span class="p">)</span>
     <span class="n">metadata</span><span class="o">.</span><span class="n">export_metadata</span><span class="p">()</span>
 </pre></div>
 
