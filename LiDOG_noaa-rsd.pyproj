@@ -25,7 +25,6 @@
     <InterpreterReference Include="Global|PythonCore|3.7" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LiDOG.py" />
     <Compile Include="merge_geojson.py">
       <SubType>Code</SubType>
     </Compile>

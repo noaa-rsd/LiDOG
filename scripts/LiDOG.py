@@ -10,25 +10,30 @@ Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
 nick.forfinski-sarkozi@noaa.gov
 """
 
-import arcpy
-import xml.etree.ElementTree as ET
-from arcpy.sa import *
 import os
 import json
 import collections
+import xml.etree.ElementTree as ET
 from pathlib import Path
-import rasterio
-from rasterio.mask import mask
-from shapely.geometry import shape, GeometryCollection
-import shapely.geometry
-from shapely.ops import transform
-import shapely.ops
 from functools import partial
+
+import arcpy
+import numpy as np
+
+from arcpy.sa import *
 import pyproj
+
+from rasterio.mask import mask
 from rasterio import features
 from rasterio.enums import Resampling
 from rasterio import Affine
-import numpy as np
+import rasterio
+
+from shapely.geometry import shape, GeometryCollection
+from shapely.ops import transform
+import shapely.ops
+import shapely.geometry
+
 
 
 class SourceDem:
@@ -384,32 +389,11 @@ class Mqual:
         self.surend = lidog.surend
         self.spatial_ref = lidog.spatial_ref
         self.mqual_schema_rpath = Path('../support_files/M_QUAL_TEMPLATE.shp')
-        self.mquals = []
         self.cells = None
         self.proj_dir = lidog.out_dir
 
-    def combine_mquals_DEPRACATED(self):
-        arcpy.AddMessage('merging cell M-QUALs to create project-wide M_QUAL...')
-        if len(self.mquals) > 1:
-            temp_mqual = r'in_memory\temp_mqual_shp'
-            current_mqual = r'in_memory\current_mqual'
-            arcpy.Union_analysis([str(self.mquals[0]), 
-                                  str(self.mquals[1])], 
-                                 current_mqual)
-
-            for i in range(2, len(self.mquals)):
-                arcpy.Union_analysis([current_mqual, str(self.mquals[i])], temp_mqual)
-                arcpy.CopyFeatures_management(temp_mqual, current_mqual)
-            arcpy.Dissolve_management(current_mqual, str(self.project_mqual_path))
-
-        else:
-            arcpy.FeatureClassToFeatureClass_conversion(str(self.mquals[0]), 
-                                                        str(self.proj_dir), 
-                                                        self.project_mqual_name)
-
-        return self.project_mqual_path
-
     def combine_mquals(self):
+        arcpy.AddMessage('merging cell M-QUALs to create project-wide M_QUAL...')
         geojsons = self.proj_dir.rglob('*_mqual.geojson')
         mqual_polys = None
 
@@ -428,16 +412,15 @@ class Mqual:
                 except Exception as e:
                     arcpy.AddMessage(e)
 
-        print('merging {} shapely polygons to create project M_QUAL...'.format(len(mqual_polys)))
         merged_mqual = shapely.ops.cascaded_union(mqual_polys)
-
-        print('copying features to shapefile...')
-        arcpy.CreateFeatureclass_management(self.proj_dir, self.project_mqual_name, 'POLYGON',
+        arcpy.CreateFeatureclass_management(str(self.proj_dir), self.project_mqual_name, 'POLYGON',
                                             str(g).replace('.geojson', '.shp'), 
                                             spatial_reference=self.spatial_ref)
-        mquals = arcpy.da.InsertCursor(self.project_mqual_path, ['SHAPE@WKT'] + list(self.fields.keys()))
+        mquals = arcpy.da.InsertCursor(str(self.project_mqual_path), ['SHAPE@WKT'] + list(self.fields.keys()))
         mquals.insertRow([merged_mqual.to_wkt()] + list(self.fields.values()))
         del mquals
+
+        return self.project_mqual_path
 
 
 class LiDOG:
@@ -667,7 +650,7 @@ if __name__ == '__main__':
 
         # create cell mqual
         cell_mqual = cell.create_mqual(prod_dem.generalize_water_coverage())
-        mqual.mquals.append(cell_mqual)
+        #mqual.mquals.append(cell_mqual)
 
         # clip pre product DEM with mqual
         cell.clip_pre_product_dem(prod_dem.pre_product_path)
