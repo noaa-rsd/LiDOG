@@ -290,7 +290,7 @@ class ProductCell:
 
     def clip_pre_product_dem(self, dem):
         arcpy.AddMessage('clipping preliminary product DEM with M_QUAL...')
-        product_dem_name = '_'.join([self.proj_id, self.product_cell_name, 'mllw', '5m', 'sb', 'dem']) + '.tif'
+        product_dem_name = '_'.join([self.product_cell_name, 'mllw', '5m', 'sb', 'dem']) + '.tif'
         product_dem_path = self.product_cell_path / product_dem_name
         mqual_geom = self.get_mqual_geometry()
         self.mask_dem(dem, mqual_geom, product_dem_path)
@@ -313,9 +313,10 @@ class MetaData:
         self.bounding_coordinates = None
 
         self.metadata = {
+            'title': 'NOAA {}-Band4 Topobathy LiDAR Processing'.format(lidog.project_id),
             'begdate': self.format_date(self.sursta),
             'enddate': self.format_date(self.surend),
-            'proj_id': lidog.project_id,  # TODO: add to title tag 
+            'proj_id': lidog.project_id,
             'longcm': self.central_meridian,
             'utmzone': self.utm_zone,
             'procdesc': self.meta_library['procdesc'][self.data_src],
