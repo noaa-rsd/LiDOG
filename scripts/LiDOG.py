@@ -650,7 +650,6 @@ if __name__ == '__main__':
 
         # create cell mqual
         cell_mqual = cell.create_mqual(prod_dem.generalize_water_coverage())
-        #mqual.mquals.append(cell_mqual)
 
         # clip pre product DEM with mqual
         cell.clip_pre_product_dem(prod_dem.pre_product_path)
