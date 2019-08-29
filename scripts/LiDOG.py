@@ -320,6 +320,7 @@ class MetaData:
             'begdate': self.format_date(self.sursta),
             'enddate': self.format_date(self.surend),
             'proj_id': lidog.project_id,
+            'placekey': lidog.place,
             'longcm': self.central_meridian,
             'utmzone': self.utm_zone,
             'procdesc': self.meta_library['procdesc'][self.data_src],
@@ -431,13 +432,14 @@ class LiDOG:
        
     def __init__(self):
         self.project_id = arcpy.GetParameterAsText(0)
-        self.data_src = arcpy.GetParameterAsText(1)
-        self.sursta = arcpy.GetParameterAsText(2)
-        self.surend = arcpy.GetParameterAsText(3)
-        self.spatial_ref = arcpy.GetParameter(4)
-        self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(5)]
-        self.z_convention = arcpy.GetParameterAsText(6)
-        self.out_dir = Path(arcpy.GetParameterAsText(7))
+        self.place = arcpy.GetParameterAsText(1)
+        self.data_src = arcpy.GetParameterAsText(2)
+        self.sursta = arcpy.GetParameterAsText(3)
+        self.surend = arcpy.GetParameterAsText(4)
+        self.spatial_ref = arcpy.GetParameter(5)
+        self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(6)]
+        self.z_convention = arcpy.GetParameterAsText(7)
+        self.out_dir = Path(arcpy.GetParameterAsText(8))
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
@@ -588,11 +590,11 @@ def set_env_vars():
                                           'anaconda3', 'Scripts')
 
     gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                        'anaconda3', 'envs', 'LiDOG_Arc24', 
+                                        'anaconda3', 'envs', 'LiDOG', 
                                         'Library', 'share', 'gdal')
 
     proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                       'anaconda3', 'envs', 'LiDOG_Arc24', 
+                                       'anaconda3', 'envs', 'LiDOG', 
                                        'Library', 'share')
 
     if script_path.name not in os.environ["PATH"]:
