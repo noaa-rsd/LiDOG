@@ -47,6 +47,7 @@ class SourceDem:
         self.proj_dir = lidog.out_dir
         self.proj_support_dir = lidog.project_support_dir
         self.band4_cells = None
+        self.sr = lidog.spatial_ref
 
     def aggregate(self, mosaic_path):
         arcpy.AddMessage('Aggregating mosaicked source DEM to product-DEM resolution...')
@@ -66,8 +67,7 @@ class SourceDem:
         mask = features.shapes(data, mask=None, transform=transform)
 
         coverage_shp = 'in_memory\cov'
-        sr = arcpy.SpatialReference(r.crs.to_epsg())
-        arcpy.CreateFeatureclass_management('in_memory', 'cov', spatial_reference=sr)
+        arcpy.CreateFeatureclass_management('in_memory', 'cov', spatial_reference=self.sr)
         cursor = arcpy.da.InsertCursor(coverage_shp, ['SHAPE@WKT'])
 
         for poly, value in mask:
