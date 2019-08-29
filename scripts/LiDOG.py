@@ -258,11 +258,14 @@ class ProductCell:
     def mask_dem(self, dem_path, geom, masked_dem_path):
         src_r = rasterio.open(dem_path)
 
+        out_crs = 'epsg:{}'.format(self.spatial_ref.PCSCode)
+        proj4_crs = pyproj.Proj(init=out_crs).definition_string()
+
         if  not isinstance(geom, GeometryCollection):  # only tranform cell boundary, not mqual
             project = partial(
                 pyproj.transform,
                 pyproj.Proj(init='epsg:4326'),
-                pyproj.Proj(init='epsg:{}'.format(src_r.crs.to_epsg())))
+                pyproj.Proj(init=out_crs))
             geom = [transform(project, geom)]
 
         try:
@@ -272,7 +275,7 @@ class ProductCell:
                              'height': out_r.shape[1],
                              'width': out_r.shape[2],
                              'transform': out_transform,
-                             'crs': src_r.crs.to_proj4(),
+                             'crs': proj4_crs,
                              'compress': 'lzw'})
 
             with rasterio.open(masked_dem_path, "w", **out_meta) as masked_dem:
@@ -585,11 +588,11 @@ def set_env_vars():
                                           'anaconda3', 'Scripts')
 
     gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                        'anaconda3', 'envs', 'LiDOG', 
+                                        'anaconda3', 'envs', 'LiDOG_Arc24', 
                                         'Library', 'share', 'gdal')
 
     proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                       'anaconda3', 'envs', 'LiDOG', 
+                                       'anaconda3', 'envs', 'LiDOG_Arc24', 
                                        'Library', 'share')
 
     if script_path.name not in os.environ["PATH"]:
