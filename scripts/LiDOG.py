@@ -316,7 +316,7 @@ class MetaData:
         self.bounding_coordinates = None
 
         self.metadata = {
-            'title': 'NOAA {}-Band4 Topobathy LiDAR Processing'.format(lidog.project_id),
+            'title': 'NOAA {} Topobathy LiDAR Processing'.format(lidog.project_id),
             'begdate': self.format_date(self.sursta),
             'enddate': self.format_date(self.surend),
             'proj_id': lidog.project_id,
@@ -585,16 +585,18 @@ class LiDOG:
 
 def set_env_vars():
     user_dir = os.path.expanduser('~')
+    env_dir = 
 
-    script_path = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                          'anaconda3', 'Scripts')
+    script_path = Path(user_dir).joinpath('AppData', 'Local', 'ESRI', 
+                                        'conda', 'envs', 'lidog1', 
+                                        'Scripts')
 
-    gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                        'anaconda3', 'envs', 'LiDOG', 
+    gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'ESRI', 
+                                        'conda', 'envs', 'lidog1', 
                                         'Library', 'share', 'gdal')
 
-    proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'Continuum', 
-                                       'anaconda3', 'envs', 'LiDOG', 
+    proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'ESRI', 
+                                       'conda', 'envs', 'lidog1', 
                                        'Library', 'share')
 
     if script_path.name not in os.environ["PATH"]:
