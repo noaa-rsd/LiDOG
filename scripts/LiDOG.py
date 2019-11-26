@@ -368,8 +368,6 @@ class MetaData:
         updated_xml = ET.tostring(self.xml_root).decode('utf-8')
         with open(self.path, "w") as f:
             f.write(updated_xml)
-        
-        pass
 
 
 class Mqual:
@@ -418,10 +416,14 @@ class Mqual:
                     arcpy.AddMessage(e)
 
         merged_mqual = shapely.ops.cascaded_union(mqual_polys)
-        arcpy.CreateFeatureclass_management(str(self.proj_dir), self.project_mqual_name, 'POLYGON',
-                                            str(g).replace('.geojson', '.shp'), 
+
+        arcpy.CreateFeatureclass_management(str(self.proj_dir), self.project_mqual_name, 
+                                            'POLYGON', str(g).replace('.geojson', '.shp'), 
                                             spatial_reference=self.spatial_ref)
-        mquals = arcpy.da.InsertCursor(str(self.project_mqual_path), ['SHAPE@WKT'] + list(self.fields.keys()))
+
+        mquals = arcpy.da.InsertCursor(str(self.project_mqual_path), 
+                                       ['SHAPE@WKT'] + list(self.fields.keys()))
+
         mquals.insertRow([merged_mqual.to_wkt()] + list(self.fields.values()))
         del mquals
 
@@ -466,26 +468,33 @@ class LiDOG:
         arcpy.CreateFeatureclass_management('in_memory', 'band4', 'POLYGON',
                                             str(ProductCell.band4_shp),
                                             spatial_reference=self.spatial_ref)
+
         band4_cells = arcpy.da.InsertCursor(proj_band4_shp_temp, ['CellName', 'SHAPE@'])
         for cell in self.product_cells.values(): 
             band4_cells.insertRow([cell.name, cell.geom])
         del band4_cells
-        arcpy.CopyFeatures_management(proj_band4_shp_temp, str(self.project_band4_cells_path))
+        arcpy.CopyFeatures_management(proj_band4_shp_temp, 
+                                      str(self.project_band4_cells_path))
 
     def create_source_dems_extents(self):
         src_dems_extent_name = self.project_id + '_Source_Dem_Extents.shp'
         self.src_dems_extent_path = self.project_support_dir / src_dems_extent_name
         src_dems_extent_name_temp = r'in_memory\extents'
+
         arcpy.CreateFeatureclass_management('in_memory', 'extents', 'POLYGON',
                                             str(ProductCell.src_dems_template_shp),
                                             spatial_reference=self.spatial_ref)
-        src_dem_extents = arcpy.da.InsertCursor(src_dems_extent_name_temp, ['name', 'resolution', 'SHAPE@'])
+
+        src_dem_extents = arcpy.da.InsertCursor(src_dems_extent_name_temp, 
+                                                ['name', 'resolution', 'SHAPE@'])
+
         for dem in self.source_dems: 
             desc = arcpy.Describe(str(dem))
             dem_res = desc.meancellwidth
             src_dem_extents.insertRow([dem.name, dem_res, desc.extent.polygon])
         del src_dem_extents
-        arcpy.CopyFeatures_management(src_dems_extent_name_temp, str(self.src_dems_extent_path))       
+        arcpy.CopyFeatures_management(src_dems_extent_name_temp, 
+                                      str(self.src_dems_extent_path))       
 
     def generate_summary_plot(self):
         arcpy.AddMessage('creating ArcGIS project with results...')
@@ -538,9 +547,13 @@ class LiDOG:
         lyrx_extents = self.src_dems_extent_path.parent / (self.src_dems_extent_path.stem + '.lyrx')
         lyrx_mqual = self.mqual_path.parent / (self.mqual_path.stem + '.lyrx')
 
-        arcpy.SaveToLayerFile_management(arcpy.MakeFeatureLayer_management(str(self.project_band4_cells_path)), str(lyrx_cells))
-        arcpy.SaveToLayerFile_management(arcpy.MakeFeatureLayer_management(str(self.src_dems_extent_path)), str(lyrx_extents))
-        arcpy.SaveToLayerFile_management(arcpy.MakeFeatureLayer_management(str(self.mqual_path)), str(lyrx_mqual))
+        layer1 = arcpy.MakeFeatureLayer_management(str(self.project_band4_cells_path))
+        layer2 = arcpy.MakeFeatureLayer_management(str(self.src_dems_extent_path))
+        layer3 = arcpy.MakeFeatureLayer_management(str(self.mqual_path))
+
+        arcpy.SaveToLayerFile_management(layer1, str(lyrx_cells))
+        arcpy.SaveToLayerFile_management(layer2, str(lyrx_extents))
+        arcpy.SaveToLayerFile_management(layer3, str(lyrx_mqual))
 
         lyr_cells_template = arcpy.mp.LayerFile(str(lyr_cells_template_path))
         lyr_extents_template = arcpy.mp.LayerFile(str(lyr_extents_template_path))
@@ -550,9 +563,14 @@ class LiDOG:
         lyrx_extents = arcpy.mp.LayerFile(str(lyrx_extents))
         lyrx_mqual = arcpy.mp.LayerFile(str(lyrx_mqual))
 
-        arcpy.ApplySymbologyFromLayer_management(lyrx_cells.listLayers()[0], lyr_cells_template.listLayers()[0])
-        arcpy.ApplySymbologyFromLayer_management(lyrx_extents.listLayers()[0], lyr_extents_template.listLayers()[0])
-        arcpy.ApplySymbologyFromLayer_management(lyrx_mqual.listLayers()[0], lyr_mqual_template.listLayers()[0])
+        arcpy.ApplySymbologyFromLayer_management(lyrx_cells.listLayers()[0], 
+                                                 lyr_cells_template.listLayers()[0])
+
+        arcpy.ApplySymbologyFromLayer_management(lyrx_extents.listLayers()[0], 
+                                                 lyr_extents_template.listLayers()[0])
+
+        arcpy.ApplySymbologyFromLayer_management(lyrx_mqual.listLayers()[0], 
+                                                 lyr_mqual_template.listLayers()[0])
 
         lyrx_cells.save()
         lyrx_extents.save()
@@ -567,7 +585,8 @@ class LiDOG:
         lyt = aprx.listLayouts("Layout")[0]
         mf = lyt.listElements("mapframe_element", "Map Frame")[0]
 
-        lyt.listElements("text_element", "Text")[0].text = 'Product Cell (Band 4) Index Map\n{}'.format(self.project_id)
+        lyt_txt = 'Product Cell (Band 4) Index Map\n{}'.format(self.project_id)
+        lyt.listElements("text_element", "Text")[0].text = lyt_txt
 
         ext = mf.getLayerExtent(lyr, False, True)
         ext, __, __ = buffer_extent(ext, buffer_factor)
@@ -583,31 +602,24 @@ class LiDOG:
         lyt.exportToPNG(png_path, resolution=600)
 
 
-def set_env_vars():
+def set_env_vars(env_name):
     user_dir = os.path.expanduser('~')
-    env_dir = 
-
-    script_path = Path(user_dir).joinpath('AppData', 'Local', 'ESRI', 
-                                        'conda', 'envs', 'lidog1', 
-                                        'Scripts')
-
-    gdal_data = Path(user_dir).joinpath('AppData', 'Local', 'ESRI', 
-                                        'conda', 'envs', 'lidog1', 
-                                        'Library', 'share', 'gdal')
-
-    proj_lib = Path(user_dir).joinpath('AppData', 'Local', 'ESRI', 
-                                       'conda', 'envs', 'lidog1', 
-                                       'Library', 'share')
+    conda_dir = Path(user_dir).joinpath('AppData', 'Local', 
+                                        'Continuum', 'anaconda3')
+    env_dir = conda_dir / 'envs' / env_name
+    share_dir = env_dir / 'Library' / 'share'
+    script_path = conda_dir / 'Scripts'
+    gdal_data_path = share_dir / 'gdal'
+    proj_lib_path = share_dir
 
     if script_path.name not in os.environ["PATH"]:
         os.environ["PATH"] += os.pathsep + str(script_path)
-
-    os.environ["GDAL_DATA"] = str(gdal_data)
-    os.environ["PROJ_LIB"] = str(proj_lib)
+    os.environ["GDAL_DATA"] = str(gdal_data_path)
+    os.environ["PROJ_LIB"] = str(proj_lib_path)
 
 
 if __name__ == '__main__':
-    set_env_vars()
+    set_env_vars('lidog')
 
     lidog = LiDOG()
     metadata = MetaData(lidog)
@@ -648,7 +660,7 @@ if __name__ == '__main__':
         arcpy.AddMessage('{} cell {} ({} of {})'.format('=' * 60, cell_name, i, num_cells))
         src_dem_mosaic_path, src_res = cell.mosaic()
 
-        if src_res == 1:
+        if round(src_res, 1) <= 1:
             product_source_dem = src_dem.aggregate(src_dem_mosaic_path)
         else:
             arcpy.AddMessage('source DEM resolution != 1m, not aggregating source DEM')
