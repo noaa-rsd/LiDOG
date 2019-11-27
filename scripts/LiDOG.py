@@ -35,7 +35,6 @@ import shapely.ops
 import shapely.geometry
 
 
-
 class SourceDem:
 
     def __init__(self, path, lidog):
@@ -51,7 +50,7 @@ class SourceDem:
 
     def aggregate(self, mosaic_path):
         arcpy.AddMessage('Aggregating mosaicked source DEM to product-DEM resolution...')
-        agg_dem = Aggregate(str(mosaic_path), self.agg_factor, 'MINIMUM', 'TRUNCATE', 'NODATA')
+        agg_dem = Aggregate(str(mosaic_path), self.agg_factor, 'MAXIMUM', 'TRUNCATE', 'NODATA')
         return agg_dem
 
     def get_coverage_fc(self):
@@ -112,13 +111,12 @@ class ProductDem:
 
     def mask_land(self):
         query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
-        #query_str = 'VALUE >= 0'
         agg_dem_water = SetNull(self.raster, self.raster, query_str)
         return agg_dem_water
 
     def generalize_water_coverage(self):
         arcpy.AddMessage('generalizing preliminary product DEM water coverage...')
-        generalized_dem5 = Aggregate(Int(self.mask_land()), 4, 'MINIMUM', 'TRUNCATE', 'NODATA')
+        generalized_dem5 = Aggregate(Int(self.mask_land()), 4, 'MAXIMUM', 'TRUNCATE', 'NODATA')
         return generalized_dem5
         
 
@@ -232,7 +230,7 @@ class ProductCell:
         mosaic_name = '{}_src'.format(self.name)
         arcpy.MosaicToNewRaster_management(inputs, 'in_memory', mosaic_name, 
                                            pixel_type='32_BIT_FLOAT', number_of_bands=1, 
-                                           mosaic_method='MINIMUM')
+                                           mosaic_method='MAXIMUM')
 
         mosaic_path = 'in_memory\{}'.format(mosaic_name)
         mosaic_resolution = arcpy.Describe(mosaic_path).meancellwidth
@@ -595,11 +593,11 @@ class LiDOG:
 
         aprx.saveACopy(str(project_aprx))
 
-        arcpy.AddMessage('generating product-cell index map (pdf & png)...')
-        pdf_path = str(self.out_dir / '{}_Product_Cells_Index_Map.pdf'.format(self.project_id))
-        png_path = str(self.out_dir / '{}_Product_Cells_Index_Map.png'.format(self.project_id))
+        index_map_ext = 'pdf'
+        arcpy.AddMessage('generating product-cell index map ({})...'.format(index_map_ext))
+        index_map_name = '{}_Product_Cells_Index_Map.{}'.format(self.project_id, index_map_ext)
+        pdf_path = str(self.out_dir / index_map_name)
         lyt.exportToPDF(pdf_path, resolution=600)
-        lyt.exportToPNG(png_path, resolution=600)
 
 
 def set_env_vars(env_name):
@@ -663,7 +661,7 @@ if __name__ == '__main__':
         if round(src_res, 1) <= 1:
             product_source_dem = src_dem.aggregate(src_dem_mosaic_path)
         else:
-            arcpy.AddMessage('source DEM resolution != 1m, not aggregating source DEM')
+            arcpy.AddMessage('source DEM resolution > 1m, not aggregating source DEM')
             product_source_dem = arcpy.Raster(str(src_dem_mosaic_path))
         
         prod_dem = ProductDem(product_source_dem, cell)
