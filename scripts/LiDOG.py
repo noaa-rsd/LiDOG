@@ -11,6 +11,7 @@ nick.forfinski-sarkozi@noaa.gov
 """
 
 import os
+import datetime
 import json
 import collections
 import xml.etree.ElementTree as ET
@@ -312,29 +313,45 @@ class MetaData:
         self.data_src = lidog.data_src
         self.meta_library = self.get_meta_library()
         self.bounding_coordinates = None
+        self.lidog_date = self.get_lidog_procdate()
 
         self.metadata = {
-            'title': 'NOAA {} Topobathy LiDAR Processing'.format(lidog.project_id),
-            'begdate': self.format_date(self.sursta),
-            'enddate': self.format_date(self.surend),
-            'proj_id': lidog.project_id,
-            'placekey': lidog.place,
-            'longcm': self.central_meridian,
-            'utmzone': self.utm_zone,
-            'procdesc': self.meta_library['procdesc'][self.data_src],
-            'westbc': None,
-            'eastbc': None,
-            'northbc': None,
-            'southbc': None,
+            'title': ['NOAA {} Topobathy LiDAR Processing'.format(lidog.project_id)],
+            'begdate': [self.format_date(self.sursta)],
+            'enddate': [self.format_date(self.surend)],
+            'proj_id': [lidog.project_id],
+            'placekey': [s.strip() for s in lidog.place.split(',')],
+            'longcm': [self.central_meridian],
+            'utmzone': [self.utm_zone],
+            'procdesc': [self.meta_library['procdesc'][self.data_src]],
+            'westbc': [None],
+            'eastbc': [None],
+            'northbc': [None],
+            'southbc': [None],
+            'pubdate': [self.lidog_date],
+            'procdate': [self.lidog_date],
+            'metd': [self.lidog_date],
+            'metrd': [self.lidog_date],
+            'origin': [self.meta_library['origin'][self.data_src]],
+            'tempkey': [self.format_date(self.sursta),
+                        self.format_date(self.surend)],
             }
+
+    @staticmethod
+    def get_lidog_procdate():
+        d = datetime.datetime.now()
+        year = str(d.year)
+        month = str(d.month)
+        day = str(d.day)
+        return year + month + day
 
     def popuate_extents(self, mqual_path):
         mqual_extents = arcpy.Describe(str(mqual_path)).extent
         mqual_extents_DD = mqual_extents.projectAs(arcpy.SpatialReference(4326))
-        self.metadata['westbc'] = mqual_extents_DD.XMin
-        self.metadata['eastbc'] = mqual_extents_DD.XMax
-        self.metadata['northbc'] = mqual_extents_DD.YMin
-        self.metadata['southbc'] = mqual_extents_DD.YMax
+        self.metadata['westbc'] = [mqual_extents_DD.XMin]
+        self.metadata['eastbc'] = [mqual_extents_DD.XMax]
+        self.metadata['northbc'] = [mqual_extents_DD.YMin]
+        self.metadata['southbc'] = [mqual_extents_DD.YMax]
 
     def get_meta_library(self):
         lidog_dir = os.path.dirname(os.path.realpath(__file__))
@@ -358,9 +375,9 @@ class MetaData:
         
     def update_metadata(self, mqual_path):
         self.popuate_extents(mqual_path)
-        for metadatum, val in self.metadata.items():
-            for e in self.xml_root.iter(metadatum):
-                e.text = str(val)
+        for metadatum, vals in self.metadata.items():
+            for i, e in enumerate(self.xml_root.iter(metadatum)):
+                e.text = str(vals[i])
     
     def export_metadata(self):
         updated_xml = ET.tostring(self.xml_root).decode('utf-8')
