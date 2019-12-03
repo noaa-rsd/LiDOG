@@ -15,6 +15,7 @@ import datetime
 import json
 import collections
 import xml.etree.ElementTree as ET
+from xml.dom import minidom
 from pathlib import Path
 from functools import partial
 
@@ -88,7 +89,7 @@ class SourceDem:
         extent_poly = self.get_coverage_fc()
         arcpy.SelectLayerByLocation_management('band4', 'INTERSECT', extent_poly)
         num_cells = int(arcpy.GetCount_management('band4').getOutput(0))
-        arcpy.AddMessage('{} coverage intersects {} band-4 cells'.format(self.name, num_cells))
+        arcpy.AddMessage('{} coverage intersects {} band-4 cell(s)'.format(self.name, num_cells))
 
         self.band4_cells = self.band4_cells_dir / (self.basename + '_BAND4_cells.shp')
         arcpy.CopyFeatures_management('band4', str(self.band4_cells))
@@ -320,7 +321,7 @@ class MetaData:
             'begdate': [self.format_date(self.sursta)],
             'enddate': [self.format_date(self.surend)],
             'proj_id': [lidog.project_id],
-            'placekey': [s.strip() for s in lidog.place.split(',')],
+            'placekeys': [s.strip() for s in lidog.place.split(',')],
             'longcm': [self.central_meridian],
             'utmzone': [self.utm_zone],
             'procdesc': [self.meta_library['procdesc'][self.data_src]],
@@ -376,11 +377,26 @@ class MetaData:
     def update_metadata(self, mqual_path):
         self.popuate_extents(mqual_path)
         for metadatum, vals in self.metadata.items():
-            for i, e in enumerate(self.xml_root.iter(metadatum)):
-                e.text = str(vals[i])
-    
+            if metadatum != 'placekeys':
+                for i, e in enumerate(self.xml_root.iter(metadatum)):
+                    e.text = str(vals[i])
+            else:
+                for e in self.xml_root.iter('place'):
+                    ET.SubElement(e, 'placekt').text = 'None'
+                    for placekey in self.metadata['placekeys']:
+                        ET.SubElement(e, 'placekey').text = placekey
+                                  
     def export_metadata(self):
-        updated_xml = ET.tostring(self.xml_root).decode('utf-8')
+
+        # https://stackoverflow.com/questions/17402323/use-xml-etree-elementtree-to-print-nicely-formatted-xml-files
+        def prettify(elem):
+            """Return a pretty-printed XML string for the Element.
+            """
+            rough_string = ET.tostring(elem, 'utf-8')
+            reparsed = minidom.parseString(rough_string)
+            return reparsed.toprettyxml(indent="\t")
+
+        updated_xml = prettify(self.xml_root)
         with open(self.path, "w") as f:
             f.write(updated_xml)
 
