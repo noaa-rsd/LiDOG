@@ -2,11 +2,13 @@
 This tool processes NOAA RSD and/or USACE JALBTCX DEM data 
 and creates an M_QUAL polygon with appropriate attribution.
 
-Originally developed based on "LidarProcessor" tool created 
+Originally developed based on the "LidarProcessor" tool created 
 by Noel Dyer, with NOAA Marine Charting Division.
 
 Author:
-Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
+Nick Forfinski-Sarkozi
+NOAA Affiliate - ERT, Inc.
+Remote Sensing Division
 nick.forfinski-sarkozi@noaa.gov
 """
 
@@ -226,7 +228,8 @@ class ProductCell:
             return buffer_fc_path
 
     def mosaic(self):
-        clipped_src_dems = [str(c) for c in self.clipped_dem_dir.glob('*_{}.tif'.format(self.name))]
+        tifs = self.clipped_dem_dir.glob('*_{}.tif'.format(self.name))
+        clipped_src_dems = [str(c) for c in tifs]
         inputs = ';'.join(clipped_src_dems)
         arcpy.AddMessage('mosaicking clipped source DEMs...'.format(self.name))
         mosaic_name = '{}_src'.format(self.name)
@@ -241,7 +244,10 @@ class ProductCell:
 
     def get_cell_geometry(self):
         geojson_path = str(self.extent_fc_path).replace('.shp', '.geojson')
-        arcpy.FeaturesToJSON_conversion(self.buffer_fc_path, geojson_path, geoJSON='GEOJSON')
+        arcpy.FeaturesToJSON_conversion(self.buffer_fc_path, 
+                                        geojson_path, 
+                                        geoJSON='GEOJSON')
+
         with open(geojson_path, 'r') as j:
             cell_poly = json.load(j)['features'][0]['geometry']
         cell_geom = shape(cell_poly)  # convert into shapely geometry
@@ -249,7 +255,10 @@ class ProductCell:
 
     def get_mqual_geometry(self):
         geojson_path = str(self.mqual_path).replace('.shp', '.geojson')
-        arcpy.FeaturesToJSON_conversion(self.mqual_in_memory, geojson_path, geoJSON='GEOJSON')
+        arcpy.FeaturesToJSON_conversion(self.mqual_in_memory, 
+                                        geojson_path, 
+                                        geoJSON='GEOJSON')
+
         with open(geojson_path, 'r') as j:
             mqual = json.load(j)['features']
         gc = GeometryCollection([shape(poly["geometry"]) for poly in mqual])
@@ -261,7 +270,8 @@ class ProductCell:
         out_crs = 'epsg:{}'.format(self.spatial_ref.PCSCode)
         proj4_crs = pyproj.Proj(init=out_crs).definition_string()
 
-        if  not isinstance(geom, GeometryCollection):  # only tranform cell boundary, not mqual
+        # only tranform cell boundary, not mqual
+        if  not isinstance(geom, GeometryCollection):
             project = partial(
                 pyproj.transform,
                 pyproj.Proj(init='epsg:4326'),
@@ -293,7 +303,8 @@ class ProductCell:
 
     def clip_pre_product_dem(self, dem):
         arcpy.AddMessage('clipping preliminary product DEM with M_QUAL...')
-        product_dem_name = '_'.join([self.product_cell_name, 'mllw', '5m', 'sb', 'dem']) + '.tif'
+        to_join = [self.product_cell_name, 'mllw', '5m', 'sb', 'dem']
+        product_dem_name = '_'.join(to_join) + '.tif'
         product_dem_path = self.product_cell_path / product_dem_name
         mqual_geom = self.get_mqual_geometry()
         self.mask_dem(dem, mqual_geom, product_dem_path)
@@ -394,7 +405,7 @@ class MetaData:
             """
             rough_string = ET.tostring(elem, 'utf-8')
             reparsed = minidom.parseString(rough_string)
-            return reparsed.toprettyxml(indent="\t")
+            return reparsed.toprettyxml(indent="  ")
 
         updated_xml = prettify(self.xml_root)
         with open(self.path, "w") as f:
@@ -471,8 +482,7 @@ class LiDOG:
         self.surend = arcpy.GetParameterAsText(4)
         self.spatial_ref = arcpy.GetParameter(5)
         self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(6)]
-        self.z_convention = arcpy.GetParameterAsText(7)
-        self.out_dir = Path(arcpy.GetParameterAsText(8))
+        self.out_dir = Path(arcpy.GetParameterAsText(7))
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
@@ -574,9 +584,13 @@ class LiDOG:
         aprx = arcpy.mp.ArcGISProject(str(aprx_template_path))
         aprx_map = aprx.listMaps("Map")[0]
         
-        lyrx_cells = self.project_band4_cells_path.parent / (self.project_band4_cells_path.stem + '.lyrx')
-        lyrx_extents = self.src_dems_extent_path.parent / (self.src_dems_extent_path.stem + '.lyrx')
-        lyrx_mqual = self.mqual_path.parent / (self.mqual_path.stem + '.lyrx')
+        lyrx_cells_stem = self.project_band4_cells_path.stem + '.lyrx'
+        lyrx_extents_stem = self.src_dems_extent_path.stem + '.lyrx'
+        lyrx_mqual_stem = self.mqual_path.stem + '.lyrx'
+
+        lyrx_cells = self.project_band4_cells_path.parent / lyrx_cells_stem
+        lyrx_extents = self.src_dems_extent_path.parent / lyrx_extents_stem
+        lyrx_mqual = self.mqual_path.parent / lyrx_mqual_stem
 
         layer1 = arcpy.MakeFeatureLayer_management(str(self.project_band4_cells_path))
         layer2 = arcpy.MakeFeatureLayer_management(str(self.src_dems_extent_path))
@@ -661,7 +675,8 @@ if __name__ == '__main__':
     arcpy.env.overwriteOutput = True
 
     for i, dem_path in enumerate(lidog.source_dems, 1):
-        arcpy.AddMessage('{} (source DEM {} of {})'.format('*' * 60, i, lidog.num_dems))
+        msg = '{} (source DEM {} of {})'.format('*' * 60, i, lidog.num_dems)
+        arcpy.AddMessage(msg)
 
         # clip 1-m DEM to band 4 cells
         src_dem = SourceDem(dem_path, lidog)
@@ -687,8 +702,9 @@ if __name__ == '__main__':
     lidog.create_source_dems_extents()
 
     num_cells = len(lidog.product_cells)
-    for i, (cell_name, cell) in enumerate(lidog.product_cells.items(), 1):     
-        arcpy.AddMessage('{} cell {} ({} of {})'.format('=' * 60, cell_name, i, num_cells))
+    for i, (cell_name, cell) in enumerate(lidog.product_cells.items(), 1):   
+        msg = '{} cell {} ({} of {})'.format('=' * 60, cell_name, i, num_cells)
+        arcpy.AddMessage(msg)
         src_dem_mosaic_path, src_res = cell.mosaic()
 
         if round(src_res, 1) <= 1:
