@@ -478,11 +478,12 @@ class LiDOG:
         self.project_id = arcpy.GetParameterAsText(0)
         self.place = arcpy.GetParameterAsText(1)
         self.data_src = arcpy.GetParameterAsText(2)
-        self.sursta = arcpy.GetParameterAsText(3)
-        self.surend = arcpy.GetParameterAsText(4)
-        self.spatial_ref = arcpy.GetParameter(5)
-        self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(6)]
-        self.out_dir = Path(arcpy.GetParameterAsText(7))
+        self.lidar_sensor = arcpy.GetParameterAsText(3)
+        self.sursta = arcpy.GetParameterAsText(4)
+        self.surend = arcpy.GetParameterAsText(5)
+        self.spatial_ref = arcpy.GetParameter(6)
+        self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(7)]
+        self.out_dir = Path(arcpy.GetParameterAsText(8))
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
