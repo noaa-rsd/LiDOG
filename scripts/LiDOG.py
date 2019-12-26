@@ -320,22 +320,37 @@ class MetaData:
         self.central_meridian = self.srs_wkt.centralMeridianInDegrees
         self.utm_zone = int((self.central_meridian + 180.0) / 6) + 1
         self.xml_root = None
+        self.lidar_sensor = lidog.lidar_sensor
+        self.las_version = lidog.las_version
         self.sursta = lidog.sursta
         self.surend = lidog.surend
         self.data_src = lidog.data_src
         self.meta_library = self.get_meta_library()
         self.bounding_coordinates = None
         self.lidog_date = self.get_lidog_procdate()
+        self.classes = {
+            '1.2': {
+                '<GROUND CLASS>': 2,
+                '<BATHY CLASS>': 26,
+                '<SUBMERGED CLASS>': 29,
+                '<IHO CLASS>': 30},
+            '1.4': {
+                '<GROUND CLASS>': 2,
+                '<BATHY CLASS>': 40,
+                '<SUBMERGED CLASS>': 43}
+        }
 
         self.metadata = {
             'title': ['NOAA {} Topobathy LiDAR Processing'.format(lidog.project_id)],
+            'abstract': [self.get_abstract_text()],
             'begdate': [self.format_date(self.sursta)],
             'enddate': [self.format_date(self.surend)],
             'proj_id': [lidog.project_id],
             'placekeys': [s.strip() for s in lidog.place.split(',')],
             'longcm': [self.central_meridian],
             'utmzone': [self.utm_zone],
-            'procdesc': [self.meta_library['procdesc'][self.data_src]],
+            'procdesc': [self.get_procdesc_text()],
+            'supplinf': [self.get_supplinf_text()],
             'westbc': [None],
             'eastbc': [None],
             'northbc': [None],
@@ -349,12 +364,31 @@ class MetaData:
                         self.format_date(self.surend)],
             }
 
+    def get_procdesc_text(self):
+        procdesc = self.meta_library['las_version'][self.las_version]['procdesc'][self.data_src]
+        las_version_replace_text = '<LAS VERSION>'
+        procdesc = procdesc.replace(las_version_replace_text, str(self.las_version))
+        for c in self.classes[self.las_version].keys():
+            procdesc = procdesc.replace(c, str(self.classes[self.las_version][c]))
+        return procdesc
+
+    def get_supplinf_text(self):
+        supplinf = self.meta_library['las_version'][self.las_version]['supplinf']
+        for c in self.classes[self.las_version].keys():
+            supplinf = supplinf.replace(c, str(self.classes[self.las_version][c]))
+        return supplinf
+
+    def get_abstract_text(self):
+        template_text = self.meta_library['abstract'][self.data_src]
+        text_to_replace = '<SENSOR>'
+        return template_text.replace(text_to_replace, self.lidar_sensor)
+
     @staticmethod
     def get_lidog_procdate():
         d = datetime.datetime.now()
         year = str(d.year)
-        month = str(d.month)
-        day = str(d.day)
+        month = str(d.month).zfill(2)
+        day = str(d.day).zfill(2)
         return year + month + day
 
     def popuate_extents(self, mqual_path):
@@ -377,7 +411,7 @@ class MetaData:
         """reformats date from mm/dd/yyyy to yyyymmdd"""
 
         d = date.split('/')
-        return d[-1] + d[0] + d[1]
+        return d[-1] + d[0].zfill(2) + d[1].zfill(2)
 
     def get_xml_template(self):
         lidog_dir = os.path.dirname(os.path.realpath(__file__))
@@ -479,11 +513,12 @@ class LiDOG:
         self.place = arcpy.GetParameterAsText(1)
         self.data_src = arcpy.GetParameterAsText(2)
         self.lidar_sensor = arcpy.GetParameterAsText(3)
-        self.sursta = arcpy.GetParameterAsText(4)
-        self.surend = arcpy.GetParameterAsText(5)
-        self.spatial_ref = arcpy.GetParameter(6)
-        self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(7)]
-        self.out_dir = Path(arcpy.GetParameterAsText(8))
+        self.las_version = str(arcpy.GetParameterAsText(4))
+        self.sursta = arcpy.GetParameterAsText(5)
+        self.surend = arcpy.GetParameterAsText(6)
+        self.spatial_ref = arcpy.GetParameter(7)
+        self.source_dems = [Path(str(dem1)) for dem1 in arcpy.GetParameter(8)]
+        self.out_dir = Path(arcpy.GetParameterAsText(9))
         self.num_dems = len(self.source_dems)
         self.product_cells = {}
         self.src_dem_band4_cells = []
