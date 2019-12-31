@@ -45,7 +45,8 @@ class SourceDem:
         self.path = path
         self.basename_unvalidated = self.path.stem
         self.basename = arcpy.ValidateTableName(self.basename_unvalidated)
-        self.name = self.basename + '.tif'
+        self.suffix = self.path.suffix
+        self.name = self.basename + self.suffix
         self.agg_factor = 5
         self.proj_dir = lidog.out_dir
         self.proj_support_dir = lidog.project_support_dir
@@ -296,7 +297,7 @@ class ProductCell:
 
     def clip_src_dem(self, dem):
         arcpy.AddMessage('clipping {} with {} cell buffer...'.format(dem.name, self.name))
-        clipped_dem_name = dem.name.replace('.tif', '_{}.tif'.format(self.name))
+        clipped_dem_name = dem.name.replace(dem.suffix, '_{}.tif'.format(self.name))
         clipped_dem_path = self.clipped_dem_dir / clipped_dem_name
         cell_geom = self.get_cell_geometry()
         self.mask_dem(dem.path, cell_geom, clipped_dem_path)
@@ -500,7 +501,8 @@ class Mqual:
         mquals = arcpy.da.InsertCursor(str(self.project_mqual_path), 
                                        ['SHAPE@WKT'] + list(self.fields.keys()))
 
-        mquals.insertRow([merged_mqual.to_wkt()] + list(self.fields.values()))
+        if not merged_mqual.is_empty:
+            mquals.insertRow([merged_mqual.to_wkt()] + list(self.fields.values()))
         del mquals
 
         return self.project_mqual_path
