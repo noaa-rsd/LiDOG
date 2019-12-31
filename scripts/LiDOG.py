@@ -382,7 +382,18 @@ class MetaData:
     def get_abstract_text(self):
         template_text = self.meta_library['abstract'][self.data_src]
         text_to_replace = '<SENSOR>'
-        return template_text.replace(text_to_replace, self.lidar_sensor)
+        sensors = self.lidar_sensor.replace("'", "").split(';')
+        new_text = None
+
+        if len(sensors) == 1:
+            new_text = sensors[0]
+        elif len(sensors) == 2:
+            new_text = ' and '.join(sensors)
+        elif len(sensors) > 2:
+            sensors[-1] = 'and ' + sensors[-1]
+            new_text = ', '.join(sensors)
+
+        return template_text.replace(text_to_replace, new_text)
 
     @staticmethod
     def get_lidog_procdate():
