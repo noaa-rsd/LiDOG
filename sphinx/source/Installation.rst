@@ -31,10 +31,15 @@ Clone the default ArcGIS Pro Python environment by issueing the following comman
 
 ::
 
-    (base)> conda create --clone <path> --prefix <path>
+    (base)> conda create --clone <default_arc_env_path> --prefix <lidog_env_path>
+	
+.. note::
+
+	LiDOG assumes that <lidog_env_path> is **C:\\users\\<user>\\AppData\\Local\\Continuum\\anaconda3**.  If you want to clone the ArcGIS Python environment to another location, you will need to update the conda_dir path in the set_env_vars function in the script file (LiDOG.py).
+	
 
 Install 3rd-party packages
-************************
+**************************
 
 Once you clone the default ArcGIS Pro Python environment, first activate the newly created LiDOG Python environment by issuing the following command at the Ananconda prompt:
 
