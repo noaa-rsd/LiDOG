@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -79,6 +79,7 @@
             
             
               <ul>
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Gui.html">GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Workflow.html">Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Deliverables.html">Deliverables</a></li>
@@ -146,197 +147,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-LiDOG">
-<span id="lidog-module"></span><h1>LiDOG module<a class="headerlink" href="#module-LiDOG" title="Permalink to this headline">¶</a></h1>
-<p>This tool processes NOAA RSD and/or USACE JALBTCX DEM data 
-and creates an M_QUAL polygon with appropriate attribution.</p>
-<p>Originally developed based on “LidarProcessor” tool created 
-by Noel Dyer, with NOAA Marine Charting Division.</p>
-<p>Author:
-Nick Forfinski-Sarkozi, NOAA Remote Sensing Division
-<a class="reference external" href="mailto:nick&#46;forfinski-sarkozi&#37;&#52;&#48;noaa&#46;gov">nick<span>&#46;</span>forfinski-sarkozi<span>&#64;</span>noaa<span>&#46;</span>gov</a></p>
-<dl class="class">
-<dt id="LiDOG.LiDOG">
-<em class="property">class </em><code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">LiDOG</code><a class="reference internal" href="_modules/LiDOG.html#LiDOG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.LiDOG" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="method">
-<dt id="LiDOG.LiDOG.create_project_band4_cells_shp">
-<code class="sig-name descname">create_project_band4_cells_shp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#LiDOG.create_project_band4_cells_shp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.LiDOG.create_project_band4_cells_shp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.LiDOG.create_source_dems_extents">
-<code class="sig-name descname">create_source_dems_extents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#LiDOG.create_source_dems_extents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.LiDOG.create_source_dems_extents" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.LiDOG.generate_summary_plot">
-<code class="sig-name descname">generate_summary_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#LiDOG.generate_summary_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.LiDOG.generate_summary_plot" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="LiDOG.MetaData">
-<em class="property">class </em><code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">MetaData</code><span class="sig-paren">(</span><em class="sig-param">lidog</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="method">
-<dt id="LiDOG.MetaData.export_metadata">
-<code class="sig-name descname">export_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData.export_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData.export_metadata" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.MetaData.format_date">
-<em class="property">static </em><code class="sig-name descname">format_date</code><span class="sig-paren">(</span><em class="sig-param">date</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData.format_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData.format_date" title="Permalink to this definition">¶</a></dt>
-<dd><p>reformats date from mm/dd/yyyy to yyyymmdd</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.MetaData.get_meta_library">
-<code class="sig-name descname">get_meta_library</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData.get_meta_library"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData.get_meta_library" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.MetaData.get_xml_template">
-<code class="sig-name descname">get_xml_template</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData.get_xml_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData.get_xml_template" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.MetaData.popuate_extents">
-<code class="sig-name descname">popuate_extents</code><span class="sig-paren">(</span><em class="sig-param">mqual_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData.popuate_extents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData.popuate_extents" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.MetaData.update_metadata">
-<code class="sig-name descname">update_metadata</code><span class="sig-paren">(</span><em class="sig-param">mqual_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#MetaData.update_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.MetaData.update_metadata" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="LiDOG.Mqual">
-<em class="property">class </em><code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">Mqual</code><span class="sig-paren">(</span><em class="sig-param">lidog</em>, <em class="sig-param">meta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#Mqual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.Mqual" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="method">
-<dt id="LiDOG.Mqual.combine_mquals">
-<code class="sig-name descname">combine_mquals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#Mqual.combine_mquals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.Mqual.combine_mquals" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="LiDOG.ProductCell">
-<em class="property">class </em><code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">ProductCell</code><span class="sig-paren">(</span><em class="sig-param">cell</em>, <em class="sig-param">lidog</em>, <em class="sig-param">mqual</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="attribute">
-<dt id="LiDOG.ProductCell.band4_shp">
-<code class="sig-name descname">band4_shp</code><em class="property"> = WindowsPath('../support_files/All_Band4_V5.shp')</em><a class="headerlink" href="#LiDOG.ProductCell.band4_shp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.buffer">
-<code class="sig-name descname">buffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.buffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.buffer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.clip_pre_product_dem">
-<code class="sig-name descname">clip_pre_product_dem</code><span class="sig-paren">(</span><em class="sig-param">dem</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.clip_pre_product_dem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.clip_pre_product_dem" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.clip_src_dem">
-<code class="sig-name descname">clip_src_dem</code><span class="sig-paren">(</span><em class="sig-param">dem</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.clip_src_dem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.clip_src_dem" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.create_mqual">
-<code class="sig-name descname">create_mqual</code><span class="sig-paren">(</span><em class="sig-param">generalized_coverage</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.create_mqual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.create_mqual" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="LiDOG.ProductCell.fields">
-<code class="sig-name descname">fields</code><em class="property"> = ['SHAPE&#64;', 'CellName']</em><a class="headerlink" href="#LiDOG.ProductCell.fields" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.get_cell_geometry">
-<code class="sig-name descname">get_cell_geometry</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.get_cell_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.get_cell_geometry" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.get_mqual_geometry">
-<code class="sig-name descname">get_mqual_geometry</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.get_mqual_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.get_mqual_geometry" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.make_cell_dir">
-<code class="sig-name descname">make_cell_dir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.make_cell_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.make_cell_dir" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.make_extent_fc">
-<code class="sig-name descname">make_extent_fc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.make_extent_fc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.make_extent_fc" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.mask_dem">
-<code class="sig-name descname">mask_dem</code><span class="sig-paren">(</span><em class="sig-param">dem_path</em>, <em class="sig-param">geom</em>, <em class="sig-param">masked_dem_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.mask_dem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.mask_dem" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductCell.mosaic">
-<code class="sig-name descname">mosaic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductCell.mosaic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductCell.mosaic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="LiDOG.ProductCell.src_dems_template_shp">
-<code class="sig-name descname">src_dems_template_shp</code><em class="property"> = WindowsPath('../support_files/src_dem_extent_shp_template.shp')</em><a class="headerlink" href="#LiDOG.ProductCell.src_dems_template_shp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="LiDOG.ProductDem">
-<em class="property">class </em><code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">ProductDem</code><span class="sig-paren">(</span><em class="sig-param">agg_raster</em>, <em class="sig-param">cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductDem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductDem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="method">
-<dt id="LiDOG.ProductDem.generalize_water_coverage">
-<code class="sig-name descname">generalize_water_coverage</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductDem.generalize_water_coverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductDem.generalize_water_coverage" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.ProductDem.mask_land">
-<code class="sig-name descname">mask_land</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#ProductDem.mask_land"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.ProductDem.mask_land" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="LiDOG.SourceDem">
-<em class="property">class </em><code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">SourceDem</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">lidog</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#SourceDem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.SourceDem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="method">
-<dt id="LiDOG.SourceDem.aggregate">
-<code class="sig-name descname">aggregate</code><span class="sig-paren">(</span><em class="sig-param">mosaic_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#SourceDem.aggregate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.SourceDem.aggregate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.SourceDem.extract_band4_cells">
-<code class="sig-name descname">extract_band4_cells</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#SourceDem.extract_band4_cells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.SourceDem.extract_band4_cells" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="LiDOG.SourceDem.get_coverage_fc">
-<code class="sig-name descname">get_coverage_fc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#SourceDem.get_coverage_fc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.SourceDem.get_coverage_fc" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="LiDOG.set_env_vars">
-<code class="sig-prename descclassname">LiDOG.</code><code class="sig-name descname">set_env_vars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/LiDOG.html#set_env_vars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LiDOG.set_env_vars" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+  <div class="section" id="lidog-module">
+<h1>LiDOG module<a class="headerlink" href="#lidog-module" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
