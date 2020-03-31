@@ -5,14 +5,13 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{b1ac2ed4-fc9e-4ed2-932f-a21945d2b0ca}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>scripts\LiDOG.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>CondaEnv|CondaEnv|lidog</InterpreterId>
+    <InterpreterId>Global|VisualStudio|lidog</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -20,6 +19,7 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="LasGrid.py" />
     <Compile Include="scripts\LiDOG.py" />
     <Compile Include="sphinx\source\conf.py" />
   </ItemGroup>
@@ -156,7 +156,7 @@
     <Folder Include="sphinx\source" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="CondaEnv|CondaEnv|lidog" />
+    <InterpreterReference Include="Global|VisualStudio|lidog" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

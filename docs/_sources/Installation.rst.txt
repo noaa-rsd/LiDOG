@@ -31,7 +31,7 @@ Clone the default ArcGIS Pro Python environment by issueing the following comman
 
 ::
 
-    (base)> conda create --clone <default_arc_env_path> --prefix <lidog_env_path>
+    (base)> conda create --clone 'C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3' --prefix <lidog_env_path>
 	
 .. note::
 

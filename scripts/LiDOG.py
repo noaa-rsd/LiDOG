@@ -21,22 +21,113 @@ from xml.dom import minidom
 from pathlib import Path
 from functools import partial
 
-import arcpy
-import numpy as np
+import pdal
+from tqdm import tqdm
+import pathos.pools as pp
 
-from arcpy.sa import *
+import numpy as np
 import pyproj
 
+import arcpy
+from arcpy.sa import *
+
+import rasterio
+import rasterio.merge
 from rasterio.mask import mask
 from rasterio import features
 from rasterio.enums import Resampling
 from rasterio import Affine
-import rasterio
 
 from shapely.geometry import shape, GeometryCollection
 from shapely.ops import transform
 import shapely.ops
 import shapely.geometry
+
+
+class LasGrid:
+
+    def __init__(self, out_dir, las_fields_to_grid):
+        self.las_fields_to_grid = las_fields_to_grid
+        self.out_meta = None
+        self.out_dir = out_dir
+
+    def get_tile_dems(self, mtype):
+        arcpy.AddMessage(f'retreiving individual {mtype} grids...')
+        dems = []
+        for dem in list(self.out_dir.glob(f'*_{mtype}.tif')):
+            arcpy.AddMessage(dem)
+            src = rasterio.open(dem)
+            dems.append(src)
+        self.out_meta = src.meta.copy()  # uses last src made
+        return dems
+
+    def gen_mosaic(self, mtype):
+        quick_look_path = self.out_dir / f'QUICK_LOOK_{mtype}.tif'
+        dems = self.get_tile_dems(mtype)
+        if dems:
+            arcpy.AddMessage('generating {}...'.format(quick_look_path))
+            mosaic, out_trans = rasterio.merge.merge(dems)
+            self.out_meta.update({
+                'driver': "GTiff",
+                'height': mosaic.shape[1],
+                'width': mosaic.shape[2],
+                'transform': out_trans})
+
+            with rasterio.open(quick_look_path, 'w', **self.out_meta) as dest:
+                dest.write(mosaic)
+        else:
+            arcpy.AddMessage('No DEM tiles were generated.')
+
+    def gen_mean_z_surface(self, las_path):
+        import pdal
+        from pathlib import Path
+
+        las_str = str(las_path).replace('\\', '/')
+
+        for f in self.las_fields_to_grid:
+            gtiff_path = self.out_dir / las_path.name.replace('.las', f'_{f}.tif')
+            gtiff_path = str(gtiff_path).replace('\\', '/')
+       
+            pdal_json = """{
+                "pipeline":[
+                    {
+                        "type": "readers.las",
+                        "filename": """ + '"{}"'.format(las_str) + """,
+                        "extra_dims": """ + '"{}=float"'.format(f) + """,
+                        "use_eb_vlr": "true"
+                    },
+                    {
+                        "type":"filters.range",
+                        "limits": "Classification[26:26]"
+                    },
+                    {
+                        "filename": """ + '"{}"'.format(gtiff_path) + """,
+                        "dimension": """ + '"{}"'.format(f) + """,
+                        "gdaldriver": "GTiff",
+                        "output_type": "mean",
+                        "resolution": "0.5",
+                        "type": "writers.gdal"
+                    }
+                ]
+            }"""
+
+            try:
+                pipeline = pdal.Pipeline(pdal_json)
+                __ = pipeline.execute()
+                arrays = pipeline.arrays
+                arcpy.AddMessage(arrays)
+                metadata = pipeline.metadata
+            except Exception as e:
+                arcpy.AddMessage(e)
+
+    def gen_mean_z_surface_multiprocess(self, las_paths):
+        p = pp.ProcessPool(4)
+        num_las_paths = len(list(las_paths))
+        for _ in tqdm(p.imap(self.gen_mean_z_surface, las_paths), 
+                      total=num_las_paths, ascii=True):
+            pass
+        p.close()
+        p.join()
 
 
 class SourceDem:
@@ -715,6 +806,20 @@ def set_env_vars(env_name):
 if __name__ == '__main__':
     set_env_vars('lidog')
 
+    las_dir = Path(r'D:\JeromesCreek\tpu_dir')
+    las_paths = list(las_dir.glob('*.las'))
+    out_dir = las_dir / 'DEMs'
+
+    las_fields_to_grid = [
+        'Z',
+        'total_tvu'
+        ]
+
+    ql = QuickLook(out_dir, las_fields_to_grid)
+    ql.gen_mean_z_surface_multiprocess(las_paths)
+    ql.gen_mosaic('total_tvu')
+
+    """ START ORIGINAL LiDOG """
     lidog = LiDOG()
     metadata = MetaData(lidog)
     mqual = Mqual(lidog, metadata)
