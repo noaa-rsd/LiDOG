@@ -31,11 +31,11 @@ Clone the default ArcGIS Pro Python environment by issueing the following comman
 
 ::
 
-    (base)> conda create --clone <default_arc_env_path> --prefix <lidog_env_path>
+    (base)> conda create --clone 'C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3' --prefix **<lidog_env_path>**
 	
 .. note::
 
-	LiDOG assumes that <lidog_env_path> is **C:\\users\\<user>\\AppData\\Local\\Continuum\\anaconda3**.  If you want to clone the ArcGIS Python environment to another location, you will need to update the conda_dir path in the set_env_vars function in the script file (LiDOG.py).
+	LiDOG assumes that **<lidog_env_path>** is **C:\\users\\<user>\\AppData\\Local\\Continuum\\anaconda3**.  If you want to clone the ArcGIS Python environment to another location, you will need to update the conda_dir path in the set_env_vars function in the script file (LiDOG.py).
 	
 
 Install 3rd-party packages
@@ -61,4 +61,6 @@ Once the LiDOG environment is activated, install the additional, 3rd-party packa
 Configure ArcGIS Pro
 --------------------
 
-Once the LiDOG Python environment is created, point the ArcGIS Pro to it by 
+Once the LiDOG Python environment is created, point the ArcGIS Pro to the newly created CUSP Ruler Python environment, as shown below:
+
+.. image:: ./support_files/installation.png

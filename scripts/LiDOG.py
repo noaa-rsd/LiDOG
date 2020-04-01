@@ -112,7 +112,7 @@ class ProductDem:
         self.pre_product_path = cell.cell_support_dir / (self.product_cell_name + '_preliminary_5m_DEM.tif')
         self.raster = agg_raster
         self.raster.save(str(self.pre_product_path))
-        self.max_depth = -100
+        self.max_depth = -100  # meters
 
     def mask_land(self):
         query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
@@ -234,8 +234,10 @@ class ProductCell:
         inputs = ';'.join(clipped_src_dems)
         arcpy.AddMessage('mosaicking clipped source DEMs...'.format(self.name))
         mosaic_name = '{}_src'.format(self.name)
-        arcpy.MosaicToNewRaster_management(inputs, 'in_memory', mosaic_name, 
-                                           pixel_type='32_BIT_FLOAT', number_of_bands=1, 
+        arcpy.MosaicToNewRaster_management(inputs, 'in_memory', 
+                                           mosaic_name, 
+                                           pixel_type='32_BIT_FLOAT', 
+                                           number_of_bands=1, 
                                            mosaic_method='MAXIMUM')
 
         mosaic_path = 'in_memory\{}'.format(mosaic_name)
@@ -267,9 +269,7 @@ class ProductCell:
 
     def mask_dem(self, dem_path, geom, masked_dem_path):
         src_r = rasterio.open(dem_path)
-
         out_crs = 'epsg:{}'.format(self.spatial_ref.PCSCode)
-        proj4_crs = pyproj.Proj(init=out_crs).definition_string()
 
         # only tranform cell boundary, not mqual
         if  not isinstance(geom, GeometryCollection):
@@ -282,15 +282,17 @@ class ProductCell:
         try:
             out_r, out_transform = mask(dataset=src_r, shapes=geom, crop=True)
             out_meta = src_r.meta.copy()
+            arcpy.AddMessage(out_meta)
             out_meta.update({'driver': 'GTiff',
                              'height': out_r.shape[1],
                              'width': out_r.shape[2],
                              'transform': out_transform,
-                             'crs': proj4_crs,
+                             'count': 1,
+                             'crs': out_crs,
                              'compress': 'lzw'})
 
             with rasterio.open(masked_dem_path, "w", **out_meta) as masked_dem:
-                masked_dem.write(out_r)
+                masked_dem.write(out_r[0], 1)
 
         except Exception as e:
             arcpy.AddMessage(e)
@@ -445,7 +447,6 @@ class MetaData:
                                   
     def export_metadata(self):
 
-        # https://stackoverflow.com/questions/17402323/use-xml-etree-elementtree-to-print-nicely-formatted-xml-files
         def prettify(elem):
             """Return a pretty-printed XML string for the Element.
             """
@@ -579,9 +580,11 @@ class LiDOG:
                                                 ['name', 'resolution', 'SHAPE@'])
 
         for dem in self.source_dems: 
-            desc = arcpy.Describe(str(dem))
-            dem_res = desc.meancellwidth
-            src_dem_extents.insertRow([dem.name, dem_res, desc.extent.polygon])
+            arcpy.AddMessage(str(dem))
+            dem_raster = arcpy.Raster(str(dem), is_multidimensional=True)
+            #desc = arcpy.Describe(dem_raster)
+            dem_res = dem_raster.meanCellWidth
+            src_dem_extents.insertRow([dem.name, dem_res, dem_raster.extent.polygon])
         del src_dem_extents
         arcpy.CopyFeatures_management(src_dems_extent_name_temp, 
                                       str(self.src_dems_extent_path))       
