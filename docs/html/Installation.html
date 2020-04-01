@@ -197,13 +197,13 @@
 </ol>
 <div class="section" id="clone-default-arcgis-pro-python-environment">
 <h3>Clone default ArcGIS Pro Python environment<a class="headerlink" href="#clone-default-arcgis-pro-python-environment" title="Permalink to this headline">¶</a></h3>
-<p>Clone the default ArcGIS Pro Python environment by issueing the following command at an Ananconda prompt:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">base</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">conda</span> <span class="n">create</span> <span class="o">--</span><span class="n">clone</span> <span class="o">&lt;</span><span class="n">default_arc_env_path</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">prefix</span> <span class="o">&lt;</span><span class="n">lidog_env_path</span><span class="o">&gt;</span>
+<p>Clone the default ArcGIS Pro Python environment by issueing the following command at an Ananconda prompt (be sure to replace &lt;user&gt; with your user directory name):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">base</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">conda</span> <span class="n">create</span> <span class="o">--</span><span class="n">clone</span> <span class="s1">&#39;C:\Program Files\ArcGIS\Pro</span><span class="se">\b</span><span class="s1">in\Python\envs</span><span class="se">\a</span><span class="s1">rcgispro-py3&#39;</span> <span class="o">--</span><span class="n">prefix</span> <span class="n">C</span><span class="p">:</span>\\<span class="n">users</span>\\<span class="o">&lt;</span><span class="n">user</span><span class="o">&gt;</span>\\<span class="n">AppData</span>\\<span class="n">Local</span>\\<span class="n">Continuum</span>\\<span class="n">anaconda3</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>LiDOG assumes that &lt;lidog_env_path&gt; is <strong>C:\users\&lt;user&gt;\AppData\Local\Continuum\anaconda3</strong>.  If you want to clone the ArcGIS Python environment to another location, you will need to update the conda_dir path in the set_env_vars function in the script file (LiDOG.py).</p>
+<p>LiDOG assumes that &lt;lidog_env_path&gt; is <em>C:\users\&lt;user&gt;\AppData\Local\Continuum\anaconda3</em>.  If you want to clone the ArcGIS Python environment to another location, you will need to update the conda_dir path in the set_env_vars function in the script file (LiDOG.py).</p>
 </div>
 </div>
 <div class="section" id="install-3rd-party-packages">
@@ -212,8 +212,8 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">base</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">activate</span> <span class="n">LiDOG</span>
 </pre></div>
 </div>
-<p>Once the LiDOG environment is activated, install the additional, 3rd-party packages by issuing the following command for each package, where &lt;package&gt; is the name of the package (rasterio, shapely, and pyproj):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">LiDOG</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="o">&lt;</span><span class="n">package</span><span class="o">&gt;</span>
+<p>Once the LiDOG environment is activated, install the additional, 3rd-party packages by issuing the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">LiDOG</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">rasterio</span> <span class="n">shapely</span> <span class="n">pyproj</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -224,7 +224,8 @@
 </div>
 <div class="section" id="configure-arcgis-pro">
 <h2>Configure ArcGIS Pro<a class="headerlink" href="#configure-arcgis-pro" title="Permalink to this headline">¶</a></h2>
-<p>Once the LiDOG Python environment is created, point the ArcGIS Pro to it by</p>
+<p>Once the LiDOG Python environment is created, point ArcGIS Pro to it, as shown below:</p>
+<img alt="_images/installation.png" src="_images/installation.png" />
 </div>
 </div>
 
