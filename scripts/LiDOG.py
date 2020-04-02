@@ -282,7 +282,6 @@ class ProductCell:
         try:
             out_r, out_transform = mask(dataset=src_r, shapes=geom, crop=True)
             out_meta = src_r.meta.copy()
-            arcpy.AddMessage(out_meta)
             out_meta.update({'driver': 'GTiff',
                              'height': out_r.shape[1],
                              'width': out_r.shape[2],
