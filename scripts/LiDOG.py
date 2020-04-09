@@ -12,6 +12,7 @@ Remote Sensing Division
 nick.forfinski-sarkozi@noaa.gov
 """
 
+
 import os
 import datetime
 import json
@@ -37,6 +38,13 @@ from shapely.geometry import shape, GeometryCollection
 from shapely.ops import transform
 import shapely.ops
 import shapely.geometry
+
+
+import os 
+from pathlib import Path
+import rasterio
+from rasterio import features
+import geopandas as gpd
 
 
 class SourceDem:

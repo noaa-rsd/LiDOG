@@ -1,0 +1,11 @@
+{
+  "jar_dir": "C:\\vdatum_all_20191024\\vdatum",
+  "gdal_dir": "C:\\vdatum_all_20191024\\GDAL",
+  "mcu_regions_path": "Z:\\LiDOG\\vdatum_valid_MCU\\vdatum_valid_MCU.shp",
+  "dem_path": "D:\\MarcoIsland\\\\LiDOG_Products\\\\MarcoIsland_US4FL1JT\\MarcoIsland_US4FL1JT_mllw_5m_sb_dem.tif",
+  "dem_extents_path": "D:\\MarcoIsland\\LiDOG_Products\\MarcoIsland_support_files\\MarcoIsland_Source_Dem_Extents.shp",
+  "mcu_path": "D:\\MarcoIsland\\MarcoIsland_MCU.tif",
+  "null_tiff_path": "D:\\MarcoIsland\\MarcoIsland_NULL.tif",
+  "null_ascii_path": "D:\\MarcoIsland\\MarcoIsland_NULL.txt",
+  "vdatum_out_dir": "D:\\MarcoIsland\\result"
+}
