@@ -21,10 +21,9 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from pathlib import Path
 from functools import partial
-
-import arcpy
 import numpy as np
 
+import arcpy
 from arcpy.sa import *
 import pyproj
 
@@ -38,13 +37,6 @@ from shapely.geometry import shape, GeometryCollection
 from shapely.ops import transform
 import shapely.ops
 import shapely.geometry
-
-
-import os 
-from pathlib import Path
-import rasterio
-from rasterio import features
-import geopandas as gpd
 
 
 class SourceDem:
