@@ -116,13 +116,11 @@ class ProductDem:
 
     def mask_land(self):
         query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
-        agg_dem_water = SetNull(self.raster, self.raster, query_str)
-        return agg_dem_water
+        return SetNull(self.raster, self.raster, query_str)
 
     def generalize_water_coverage(self):
         arcpy.AddMessage('generalizing preliminary product DEM water coverage...')
-        generalized_dem5 = Aggregate(Int(self.mask_land()), 4, 'MAXIMUM', 'TRUNCATE', 'NODATA')
-        return generalized_dem5
+        return Aggregate(Int(self.mask_land()), 4, 'MAXIMUM', 'TRUNCATE', 'NODATA')
         
 
 class ProductCell:
