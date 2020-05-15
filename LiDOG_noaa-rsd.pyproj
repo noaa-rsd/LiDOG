@@ -124,6 +124,7 @@
     <Content Include="docs\_static\searchtools.js" />
     <Content Include="docs\_static\underscore-1.3.1.js" />
     <Content Include="docs\_static\underscore.js" />
+    <Content Include="lidog_env_setup.bat" />
     <Content Include="sphinx\images\Band4CellsOverview.PNG" />
     <Content Include="sphinx\images\LiDOG_GUI.png" />
     <Content Include="sphinx\images\LiDOG_Workflow.png" />
