@@ -55,8 +55,7 @@ class SourceDem:
 
     def aggregate(self, mosaic_path):
         arcpy.AddMessage('Aggregating mosaicked source DEM to product-DEM resolution...')
-        agg_dem = Aggregate(str(mosaic_path), self.agg_factor, 'MAXIMUM', 'TRUNCATE', 'NODATA')
-        return agg_dem
+        return Aggregate(str(mosaic_path), self.agg_factor, 'MAXIMUM', 'TRUNCATE', 'NODATA')
 
     def get_coverage_fc(self):
         arcpy.AddMessage('determining coverage of DEM...')
@@ -116,13 +115,11 @@ class ProductDem:
 
     def mask_land(self):
         query_str = 'VALUE >= 0 OR VALUE <= {}'.format(self.max_depth)
-        agg_dem_water = SetNull(self.raster, self.raster, query_str)
-        return agg_dem_water
+        return SetNull(self.raster, self.raster, query_str)
 
     def generalize_water_coverage(self):
         arcpy.AddMessage('generalizing preliminary product DEM water coverage...')
-        generalized_dem5 = Aggregate(Int(self.mask_land()), 4, 'MAXIMUM', 'TRUNCATE', 'NODATA')
-        return generalized_dem5
+        return Aggregate(Int(self.mask_land()), 4, 'MAXIMUM', 'TRUNCATE', 'NODATA')
         
 
 class ProductCell:
