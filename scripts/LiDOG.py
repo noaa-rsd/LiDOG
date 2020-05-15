@@ -250,8 +250,7 @@ class ProductCell:
 
         with open(geojson_path, 'r') as j:
             cell_poly = json.load(j)['features'][0]['geometry']
-        cell_geom = shape(cell_poly)  # convert into shapely geometry
-        return cell_geom
+        return shape(cell_poly)  # convert into shapely geometry
 
     def get_mqual_geometry(self):
         geojson_path = str(self.mqual_path).replace('.shp', '.geojson')
@@ -261,8 +260,7 @@ class ProductCell:
 
         with open(geojson_path, 'r') as j:
             mqual = json.load(j)['features']
-        gc = GeometryCollection([shape(poly["geometry"]) for poly in mqual])
-        return gc
+        return GeometryCollection([shape(poly["geometry"]) for poly in mqual])
 
     def mask_dem(self, dem_path, geom, masked_dem_path):
         src_r = rasterio.open(dem_path)
